@@ -1291,21 +1291,64 @@ function openLogoEditor(side) {
 function confirmLogoPosition() {
   if (!fabricCanvas || !fabricSide) return;
   const objs = fabricCanvas.getObjects();
-  const logoImg = objs.find(o => o.selectable !== false);
-  if (!logoImg) { closeLogoEditor(); return; }
+  // blank is the non-selectable object, logo is selectable
+  const blankObj = objs.find(o => o.selectable === false);
+  const logoObj  = objs.find(o => o.selectable !== false);
+  if (!logoObj) { closeLogoEditor(); return; }
 
-  const pg = state.pages[state.currentPage];
+  const pg  = state.pages[state.currentPage];
   const key = fabricSide === 'front' ? 'frontLogoPosSize' : 'backLogoPosSize';
-  pg[key] = { x: logoImg.left, y: logoImg.top, w: logoImg.scaleX, h: logoImg.scaleY };
+  pg[key] = { x: logoObj.left, y: logoObj.top, w: logoObj.scaleX, h: logoObj.scaleY };
 
-  // Generate composite
-  const composite = fabricCanvas.toDataURL({ format: 'png', quality: 1, multiplier: 2 });
-  if (fabricSide === 'front') pg.frontCompositeBase64 = composite;
-  else                        pg.backCompositeBase64  = composite;
+  // ── Composite: render blank+logo onto a clean offscreen canvas ──
+  // Use the blank's actual pixel dimensions — NOT the fabric editor canvas.
+  // This avoids the dark editor background and preserves full resolution.
+  const blankB64 = pg[fabricSide === 'front' ? 'frontBlankBase64' : 'backBlankBase64'];
+  const logoB64  = pg[fabricSide === 'front' ? 'frontLogoBase64'  : 'backLogoBase64'];
 
-  closeLogoEditor();
-  scheduleUpdate();
-  toast('Logo position saved ✓', 'success');
+  const blankNative = new Image();
+  blankNative.onload = () => {
+    const bW = blankNative.naturalWidth;
+    const bH = blankNative.naturalHeight;
+
+    // Scale: fabric display units → real image pixels
+    const displayW = blankObj ? blankObj.getScaledWidth()  : fabricCanvas.width;
+    const displayH = blankObj ? blankObj.getScaledHeight() : fabricCanvas.height;
+    const originX  = blankObj ? blankObj.left : 0;
+    const originY  = blankObj ? blankObj.top  : 0;
+    const scaleX   = bW / displayW;
+    const scaleY   = bH / displayH;
+
+    const offscreen = document.createElement('canvas');
+    offscreen.width  = bW;
+    offscreen.height = bH;
+    const ctx = offscreen.getContext('2d');
+
+    // Draw blank at full native size
+    ctx.drawImage(blankNative, 0, 0, bW, bH);
+
+    // Draw logo: translate from fabric coords to image coords
+    const logoNative = new Image();
+    logoNative.onload = () => {
+      const lx = (logoObj.left - originX) * scaleX;
+      const ly = (logoObj.top  - originY) * scaleY;
+      const lw = logoObj.getScaledWidth()  * scaleX;
+      const lh = logoObj.getScaledHeight() * scaleY;
+      ctx.drawImage(logoNative, lx, ly, lw, lh);
+
+      const composite = offscreen.toDataURL('image/png');
+      if (fabricSide === 'front') pg.frontCompositeBase64 = composite;
+      else                        pg.backCompositeBase64  = composite;
+
+      // Show composite in thumbnail (replaces blank zone)
+      updateThumb(fabricSide === 'front' ? 'frontBlank' : 'backBlank', composite);
+      closeLogoEditor();
+      scheduleUpdate();
+      toast('Logo position saved ✓', 'success');
+    };
+    logoNative.src = logoB64;
+  };
+  blankNative.src = blankB64;
 }
 
 function resetLogoPosition() {
@@ -1406,59 +1449,117 @@ async function buildPdf() {
   return await pdfDoc.save();
 }
 
+// Loads the JP logo from /public/logo.png as base64 for embedding in PDF
+// We cache it so we only fetch once per session
+let _jpLogoBase64 = null;
+let _jpGlobeBase64 = null;
+let _jpInstaBase64 = null;
+async function getStaticAsset(path) {
+  try {
+    const res = await fetch(path);
+    const buf = await res.arrayBuffer();
+    const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+    const mime = path.endsWith('.png') ? 'image/png' : 'image/jpeg';
+    return `data:${mime};base64,${b64}`;
+  } catch(e) { return null; }
+}
+async function getJpLogo()  { if (!_jpLogoBase64)  _jpLogoBase64  = await getStaticAsset('./public/logo.png');  return _jpLogoBase64; }
+async function getJpGlobe() { if (!_jpGlobeBase64) _jpGlobeBase64 = await getStaticAsset('./public/globe.png'); return _jpGlobeBase64; }
+async function getJpInsta() { if (!_jpInstaBase64) _jpInstaBase64 = await getStaticAsset('./public/insta.png'); return _jpInstaBase64; }
+
 async function renderTemplate1(pdfDoc, page, pg) {
   const { StandardFonts, rgb } = PDFLib;
-  const margin = 32;
-  const gray = rgb(0.3,0.3,0.3);
-  const dark = rgb(0.2,0.2,0.2);
-  const accent = rgb(0.91, 1, 0.28); // #e8ff47
+  // Match original exactly
+  const marginTop  = 25;
+  const marginSide = 35;
+  const titleColor = rgb(0.302, 0.306, 0.306); // #4d4e4e
 
-  const titleFont    = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const bodyFont     = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const captionFont  = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
+  const titleFont       = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const socialsFont     = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const captionFont     = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
   const placeholderFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const boldFont        = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // --- HEADER BAR ---
-  page.drawRectangle({ x: 0, y: PAGE_HEIGHT - 72, width: PAGE_WIDTH, height: 72, color: rgb(0.05,0.05,0.05) });
+  // White background (pdf-lib default is white, but be explicit)
+  page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT, color: rgb(1,1,1) });
 
-  // Brand mark
-  const brandText = 'JOINT PRINTING';
-  const brandFs = 18;
-  page.drawText(brandText, { x: margin, y: PAGE_HEIGHT - 46, size: brandFs, font: titleFont, color: accent });
+  // ── HEADER: JP LOGO image top-left ──────────────────────────────
+  let logoBottomY = PAGE_HEIGHT - marginTop; // fallback if logo fails
+  const jpLogoB64 = await getJpLogo();
+  if (jpLogoB64) {
+    const jpLogoImg = await embedImg(pdfDoc, jpLogoB64);
+    if (jpLogoImg) {
+      const scaled = jpLogoImg.scale(0.70);
+      const lx = marginSide;
+      const ly = PAGE_HEIGHT - scaled.height - marginTop;
+      page.drawImage(jpLogoImg, { x: lx, y: ly, width: scaled.width, height: scaled.height });
+      logoBottomY = ly;
+    }
+  }
 
-  // Title / subtitle
+  // ── HEADER: website + instagram icons top-right ──────────────────
+  const socialsFontSize = 16;
+  const website   = 'www.jointprinting.com';
+  const instagram = '@jointprinting';
+  const socialsColor = rgb(0, 0, 0);
+
+  const websiteW = socialsFont.widthOfTextAtSize(website, socialsFontSize);
+  const websiteX = PAGE_WIDTH - marginSide - websiteW;
+  const websiteY = PAGE_HEIGHT - marginTop - socialsFontSize;
+  page.drawText(website, { x: websiteX, y: websiteY, size: socialsFontSize, font: socialsFont, color: socialsColor });
+
+  // Globe icon
+  const globeB64 = await getJpGlobe();
+  if (globeB64) {
+    const globeImg = await embedImg(pdfDoc, globeB64);
+    if (globeImg) {
+      const gd = globeImg.scale(1);
+      const gx = websiteX - gd.width * 1.5;
+      const gy = websiteY - (gd.height - socialsFontSize) / 2;
+      page.drawImage(globeImg, { x: gx, y: gy, width: gd.width, height: gd.height });
+    }
+  }
+
+  const instaY = websiteY - socialsFontSize * 1.8;
+  const instaW = socialsFont.widthOfTextAtSize(instagram, socialsFontSize);
+  const instaX = PAGE_WIDTH - marginSide - instaW;
+  page.drawText(instagram, { x: instaX, y: instaY, size: socialsFontSize, font: socialsFont, color: socialsColor });
+
+  // Instagram icon
+  const instaB64 = await getJpInsta();
+  if (instaB64) {
+    const instaImg = await embedImg(pdfDoc, instaB64);
+    if (instaImg) {
+      const id = instaImg.scale(1.1);
+      const ix = websiteX - id.width * 1.5;
+      const iy = instaY - (id.height - socialsFontSize) / 2;
+      page.drawImage(instaImg, { x: ix, y: iy, width: id.width, height: id.height });
+    }
+  }
+
+  // ── TITLE & SUBTITLE ─────────────────────────────────────────────
+  const titleFontSize    = 28;
+  const subtitleFontSize = 20;
+  const titleX  = marginSide;
+  const titleY  = logoBottomY - titleFontSize * 1.3;
+  const subtitleY = titleY - titleFontSize;
+
   if (pg.title) {
-    page.drawText(pg.title, { x: margin, y: PAGE_HEIGHT - 26, size: 11, font: bodyFont, color: rgb(0.7,0.7,0.7) });
+    page.drawText(pg.title, { x: titleX, y: titleY, size: titleFontSize, font: titleFont, color: titleColor });
   }
-
-  // Mockup number right
-  const mockupStr = pg.mockupNum ? `Mockup ${pg.mockupNum}` : '';
-  if (mockupStr) {
-    const mnFs = 11;
-    const mnW = bodyFont.widthOfTextAtSize(mockupStr, mnFs);
-    page.drawText(mockupStr, { x: PAGE_WIDTH - margin - mnW, y: PAGE_HEIGHT - 42, size: mnFs, font: bodyFont, color: rgb(0.5,0.5,0.5) });
-  }
-
-  // Website
-  const site = 'www.jointprinting.com';
-  const siteFs = 10;
-  const siteW = bodyFont.widthOfTextAtSize(site, siteFs);
-  page.drawText(site, { x: PAGE_WIDTH - margin - siteW, y: PAGE_HEIGHT - 58, size: siteFs, font: bodyFont, color: rgb(0.4,0.4,0.4) });
-
-  // Subtitle
   if (pg.subtitle) {
-    page.drawText(pg.subtitle, { x: margin, y: PAGE_HEIGHT - 90, size: 11, font: bodyFont, color: rgb(0.5,0.5,0.5) });
+    page.drawText(pg.subtitle, { x: titleX, y: subtitleY, size: subtitleFontSize, font: titleFont, color: titleColor });
   }
 
-  // --- GARMENT IMAGES ---
-  const bodyY = PAGE_HEIGHT - 120;
-  const imgW = PAGE_WIDTH / 2 - margin * 1.5;
-  const imgH = imgW * 1.2;
-  const frontX = margin;
-  const backX  = PAGE_WIDTH - margin - imgW;
-  const imgY   = bodyY - imgH;
+  // ── GARMENT IMAGES ───────────────────────────────────────────────
+  // Match original exactly: width = pageWidth/2 - marginSide*1.5, height = width*1.25
+  const imgW = PAGE_WIDTH / 2 - marginSide * 1.5;
+  const imgH = imgW * 1.25;
+  const frontX = marginSide;
+  const backX  = PAGE_WIDTH - marginSide - imgW;
+  const imgY   = subtitleY - imgH - subtitleFontSize;
 
-  // Front
+  // Front shirt: prefer composite (blank+logo positioned), else raw blank, else placeholder
   const frontSrc = pg.frontCompositeBase64 || pg.frontBlankBase64;
   if (frontSrc) {
     const img = await embedImg(pdfDoc, frontSrc);
@@ -1468,7 +1569,7 @@ async function renderTemplate1(pdfDoc, page, pg) {
     drawPlaceholder(page, frontX, imgY, imgW, imgH, 'SHIRT FRONT', placeholderFont);
   }
 
-  // Back
+  // Back shirt
   const backSrc = pg.backCompositeBase64 || pg.backBlankBase64;
   if (backSrc) {
     const img = await embedImg(pdfDoc, backSrc);
@@ -1478,83 +1579,134 @@ async function renderTemplate1(pdfDoc, page, pg) {
     drawPlaceholder(page, backX, imgY, imgW, imgH, 'SHIRT BACK', placeholderFont);
   }
 
-  // --- CAPTIONS ---
-  const capFs = 11;
-  const capLH = 15;
-  const capColor = rgb(0.3,0.3,0.3);
+  // ── CAPTIONS ─────────────────────────────────────────────────────
+  const captionFontSize  = 14;
+  const captionColor     = rgb(0, 0, 0);
+  const captionLineHeight = Math.ceil(captionFontSize * 1.3);
 
-  let frontCapY = imgY - capLH;
+  let frontCapBottomY = imgY - captionLineHeight;
   const frontCap = buildCaption(pg.printFront);
-  for (const line of frontCap) {
-    page.drawText(line, { x: frontX, y: frontCapY, size: capFs, font: captionFont, color: capColor });
-    frontCapY -= capLH;
+  if (frontCap.length) {
+    page.drawText(frontCap.join('\n'), {
+      x: frontX, y: frontCapBottomY, maxWidth: imgW,
+      size: captionFontSize, lineHeight: captionLineHeight,
+      font: captionFont, color: captionColor,
+    });
+    let lc = 0;
+    for (const s of frontCap) lc += Math.ceil(captionFont.widthOfTextAtSize(s, captionFontSize) / imgW);
+    frontCapBottomY -= (lc - 1) * captionLineHeight;
   }
 
-  let backCapY = imgY - capLH;
+  let backCapBottomY = imgY - captionLineHeight;
   const backCap = buildCaption(pg.printBack);
-  for (const line of backCap) {
-    page.drawText(line, { x: backX, y: backCapY, size: capFs, font: captionFont, color: capColor });
-    backCapY -= capLH;
+  if (backCap.length) {
+    page.drawText(backCap.join('\n'), {
+      x: backX, y: backCapBottomY, maxWidth: imgW,
+      size: captionFontSize, lineHeight: captionLineHeight,
+      font: captionFont, color: captionColor,
+    });
+    let lc = 0;
+    for (const s of backCap) lc += Math.ceil(captionFont.widthOfTextAtSize(s, captionFontSize) / imgW);
+    backCapBottomY -= (lc - 1) * captionLineHeight;
   }
 
-  const belowY = Math.min(frontCapY, backCapY) - 12;
-
-  // --- LOGO BOXES ---
-  const logoBoxW = imgW * 0.7;
+  // ── LOGO BOXES ───────────────────────────────────────────────────
+  // The logo box section ALWAYS shows the raw logo art (same as original PDF).
+  // The composite (blank+logo) only affects the SHIRT IMAGE above — the logo
+  // art box below is always the standalone logo file.
+  const logoBoxW = PAGE_WIDTH / 2 - marginSide * 2;
   const logoBoxH = logoBoxW;
-  const frontLogoX = frontX + (imgW - logoBoxW) / 2;
-  const backLogoX  = backX  + (imgW - logoBoxW) / 2;
-  const logoBoxY   = belowY - logoBoxH;
+  const sharedLogoY = Math.min(frontCapBottomY, backCapBottomY) - logoBoxH - captionLineHeight / 2;
 
-  if (pg.frontLogoBase64 && !pg.frontCompositeBase64) {
+  const frontLogoX = marginSide;
+  if (pg.frontLogoBase64) {
     const logoImg = await embedImg(pdfDoc, pg.frontLogoBase64);
-    if (logoImg) page.drawImage(logoImg, { x: frontLogoX, y: logoBoxY, width: logoBoxW, height: logoBoxH });
-  } else if (!pg.frontCompositeBase64 && !state.showPrintPreview) {
-    drawPlaceholder(page, frontLogoX, logoBoxY, logoBoxW, logoBoxH, 'FRONT LOGO', placeholderFont);
+    if (logoImg) page.drawImage(logoImg, { x: frontLogoX, y: sharedLogoY, width: logoBoxW, height: logoBoxH });
+  } else if (!state.showPrintPreview) {
+    drawPlaceholder(page, frontLogoX, sharedLogoY, logoBoxW, logoBoxH, 'LOGO FRONT', placeholderFont);
   }
 
-  if (pg.backLogoBase64 && !pg.backCompositeBase64) {
+  const backLogoX = backX;
+  if (pg.backLogoBase64) {
     const logoImg = await embedImg(pdfDoc, pg.backLogoBase64);
-    if (logoImg) page.drawImage(logoImg, { x: backLogoX, y: logoBoxY, width: logoBoxW, height: logoBoxH });
-  } else if (!pg.backCompositeBase64 && !state.showPrintPreview) {
-    drawPlaceholder(page, backLogoX, logoBoxY, logoBoxW, logoBoxH, 'BACK LOGO', placeholderFont);
+    if (logoImg) page.drawImage(logoImg, { x: backLogoX, y: sharedLogoY, width: logoBoxW, height: logoBoxH });
+  } else if (!state.showPrintPreview) {
+    drawPlaceholder(page, backLogoX, sharedLogoY, logoBoxW, logoBoxH, 'LOGO BACK', placeholderFont);
   }
 
-  // --- COLOR CIRCLES ---
-  const circleY = logoBoxY - 28;
-  drawColorCircles(page, frontX + 18, circleY, pg.frontColors, 14, captionFont, frontX + imgW);
-  drawColorCircles(page, backX + 18,  circleY, pg.backColors,  14, captionFont, backX  + imgW);
+  // ── COLOR CIRCLES ────────────────────────────────────────────────
+  const circleSize = 26;
+  const frontCircleY = sharedLogoY - circleSize * 1.3;
+  drawColorCircles(page, marginSide + circleSize, frontCircleY, pg.frontColors, circleSize, captionFont, marginSide + logoBoxW);
+  drawColorCircles(page, backX + circleSize, frontCircleY, pg.backColors, circleSize, captionFont, backX + logoBoxW);
 
-  // --- FOOTER ---
-  page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 36, color: rgb(0.05,0.05,0.05) });
-  page.drawText('INNOVATION IN INK', { x: margin, y: 12, size: 10, font: titleFont, color: rgb(0.35,0.35,0.35) });
-  const dateStr = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
-  const dateW = bodyFont.widthOfTextAtSize(dateStr, 9);
-  page.drawText(dateStr, { x: PAGE_WIDTH - margin - dateW, y: 13, size: 9, font: bodyFont, color: rgb(0.3,0.3,0.3) });
+  // ── FOOTER ───────────────────────────────────────────────────────
+  const mottoFont = boldFont;
+  const mottoFontSize = 22;
+  const mottoY = marginTop / 2 + 18;
+  page.drawText('INNOVATION IN INK', { x: marginSide, y: mottoY, size: mottoFontSize, font: mottoFont, color: titleColor });
+
+  const mockupNumStr = 'Mockup ' + (pg.mockupNum || '#0000000');
+  const mockupNumFontSize = 18;
+  page.drawText(mockupNumStr, { x: marginSide, y: mottoY - mockupNumFontSize * 1.2, size: mockupNumFontSize, font: titleFont, color: titleColor });
 }
 
 async function renderTemplate2(pdfDoc, page, pg) {
   const { StandardFonts, rgb } = PDFLib;
-  const margin = 40;
-  const accent = rgb(0.91, 1, 0.28);
+  const marginTop  = 25;
+  const marginSide = 35;
+  const titleColor = rgb(0.302, 0.306, 0.306);
 
-  const titleFont    = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const bodyFont     = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const captionFont  = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
+  const titleFont       = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const socialsFont     = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const captionFont     = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
   const placeholderFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const boldFont        = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-  // Header
-  page.drawRectangle({ x: 0, y: PAGE_HEIGHT - 72, width: PAGE_WIDTH, height: 72, color: rgb(0.05,0.05,0.05) });
-  page.drawText('JOINT PRINTING', { x: margin, y: PAGE_HEIGHT - 46, size: 18, font: titleFont, color: accent });
-  const site = 'www.jointprinting.com';
-  const siteW = bodyFont.widthOfTextAtSize(site, 10);
-  page.drawText(site, { x: PAGE_WIDTH - margin - siteW, y: PAGE_HEIGHT - 46, size: 10, font: bodyFont, color: rgb(0.4,0.4,0.4) });
+  // White background
+  page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: PAGE_HEIGHT, color: rgb(1,1,1) });
 
-  // Single centered image
+  // JP Logo top-left
+  let logoBottomY = PAGE_HEIGHT - marginTop;
+  const jpLogoB64 = await getJpLogo();
+  if (jpLogoB64) {
+    const jpLogoImg = await embedImg(pdfDoc, jpLogoB64);
+    if (jpLogoImg) {
+      const scaled = jpLogoImg.scale(0.70);
+      page.drawImage(jpLogoImg, { x: marginSide, y: PAGE_HEIGHT - scaled.height - marginTop, width: scaled.width, height: scaled.height });
+      logoBottomY = PAGE_HEIGHT - scaled.height - marginTop;
+    }
+  }
+
+  // Socials top-right
+  const socialsFontSize = 16;
+  const website = 'www.jointprinting.com';
+  const websiteW = socialsFont.widthOfTextAtSize(website, socialsFontSize);
+  const websiteX = PAGE_WIDTH - marginSide - websiteW;
+  const websiteY = PAGE_HEIGHT - marginTop - socialsFontSize;
+  page.drawText(website, { x: websiteX, y: websiteY, size: socialsFontSize, font: socialsFont, color: rgb(0,0,0) });
+
+  const globeB64 = await getJpGlobe();
+  if (globeB64) {
+    const gi = await embedImg(pdfDoc, globeB64);
+    if (gi) { const gd = gi.scale(1); page.drawImage(gi, { x: websiteX - gd.width * 1.5, y: websiteY - (gd.height - socialsFontSize)/2, width: gd.width, height: gd.height }); }
+  }
+  const instaY = websiteY - socialsFontSize * 1.8;
+  page.drawText('@jointprinting', { x: PAGE_WIDTH - marginSide - socialsFont.widthOfTextAtSize('@jointprinting', socialsFontSize), y: instaY, size: socialsFontSize, font: socialsFont, color: rgb(0,0,0) });
+
+  // Title if provided
+  const titleFontSize = 28;
+  const subtitleFontSize = 20;
+  const titleY    = logoBottomY - titleFontSize * 1.3;
+  const subtitleY = titleY - titleFontSize;
+  if (pg.title)    page.drawText(pg.title,    { x: marginSide, y: titleY,    size: titleFontSize,    font: titleFont, color: titleColor });
+  if (pg.subtitle) page.drawText(pg.subtitle, { x: marginSide, y: subtitleY, size: subtitleFontSize, font: titleFont, color: titleColor });
+
+  // Single centered garment
   const imgW = PAGE_WIDTH * 0.55;
-  const imgH = imgW * 1.2;
+  const imgH = imgW * 1.25;
   const imgX = (PAGE_WIDTH - imgW) / 2;
-  const imgY = PAGE_HEIGHT - 100 - imgH;
+  const imgY = subtitleY - imgH - subtitleFontSize;
 
   const src = pg.frontCompositeBase64 || pg.frontBlankBase64;
   if (src) {
@@ -1566,31 +1718,36 @@ async function renderTemplate2(pdfDoc, page, pg) {
   }
 
   // Caption
-  const capFs = 13;
-  const capLH = 18;
-  let capY = imgY - capLH;
+  const captionFontSize = 14;
+  const captionLineHeight = Math.ceil(captionFontSize * 1.3);
+  let capY = imgY - captionLineHeight;
   const cap = buildCaption(pg.printFront);
-  for (const line of cap) {
-    const lw = captionFont.widthOfTextAtSize(line, capFs);
-    page.drawText(line, { x: (PAGE_WIDTH - lw)/2, y: capY, size: capFs, font: captionFont, color: rgb(0.35,0.35,0.35) });
-    capY -= capLH;
+  if (cap.length) {
+    page.drawText(cap.join('\n'), { x: marginSide, y: capY, maxWidth: PAGE_WIDTH - marginSide * 2, size: captionFontSize, lineHeight: captionLineHeight, font: captionFont, color: rgb(0,0,0) });
+    let lc = 0;
+    for (const s of cap) lc += Math.ceil(captionFont.widthOfTextAtSize(s, captionFontSize) / (PAGE_WIDTH - marginSide * 2));
+    capY -= (lc - 1) * captionLineHeight;
   }
 
-  // Logo
-  const logoBoxW = PAGE_WIDTH * 0.3;
-  const logoBoxY = capY - logoBoxW - 16;
+  // Logo centered
+  const logoBoxW = PAGE_WIDTH / 2 - marginSide * 2;
+  const logoBoxH = logoBoxW;
   const logoBoxX = (PAGE_WIDTH - logoBoxW) / 2;
-  if (pg.frontLogoBase64 && !pg.frontCompositeBase64) {
+  const logoBoxY = capY - logoBoxH - captionLineHeight;
+  if (pg.frontLogoBase64) {
     const logoImg = await embedImg(pdfDoc, pg.frontLogoBase64);
-    if (logoImg) page.drawImage(logoImg, { x: logoBoxX, y: logoBoxY, width: logoBoxW, height: logoBoxW });
+    if (logoImg) page.drawImage(logoImg, { x: logoBoxX, y: logoBoxY, width: logoBoxW, height: logoBoxH });
+  } else if (!state.showPrintPreview) {
+    drawPlaceholder(page, logoBoxX, logoBoxY, logoBoxW, logoBoxH, 'LOGO FRONT', placeholderFont);
   }
 
   // Colors
-  drawColorCircles(page, PAGE_WIDTH/2 - 100, logoBoxY - 30, pg.frontColors, 14, captionFont, PAGE_WIDTH/2 + 100);
+  drawColorCircles(page, PAGE_WIDTH/2 - logoBoxW/2 + 26, logoBoxY - 34, pg.frontColors, 26, captionFont, PAGE_WIDTH/2 + logoBoxW/2);
 
   // Footer
-  page.drawRectangle({ x: 0, y: 0, width: PAGE_WIDTH, height: 36, color: rgb(0.05,0.05,0.05) });
-  page.drawText('INNOVATION IN INK', { x: margin, y: 12, size: 10, font: titleFont, color: rgb(0.35,0.35,0.35) });
+  const mottoY = marginTop / 2 + 18;
+  page.drawText('INNOVATION IN INK', { x: marginSide, y: mottoY, size: 22, font: boldFont, color: titleColor });
+  page.drawText('Mockup ' + (pg.mockupNum || '#0000000'), { x: marginSide, y: mottoY - 22, size: 18, font: titleFont, color: titleColor });
 }
 
 function buildCaption(print) {
