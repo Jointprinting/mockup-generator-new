@@ -439,27 +439,68 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   <div id="lookbook-view-wrapper">
     <div id="lookbook-view" style="display:grid;grid-template-columns:1fr 360px;height:100%;overflow:hidden;">
 
-      <!-- Left: mockup selection + queue preview -->
+      <!-- Left: mockup selection -->
       <div class="lookbook-left">
         <div class="lookbook-page-header">
           <h2>Lookbook Builder</h2>
         </div>
         <p style="font-size:12px;color:var(--text2);margin-bottom:20px;line-height:1.6;">
-          Select saved mockups to include in a client deck. Each item's front (and back, if available)
-          will appear on its own page. Drag to reorder in the queue, then export.
+          Select mockups to feature. The export is a <strong style="color:var(--text)">single-page PDF</strong> — client logo(s) displayed prominently at top, then all selected garment mockups shown as a cohesive collection grid below.
         </p>
 
-        <div style="font-size:11px;color:var(--text3);margin-bottom:10px;letter-spacing:.06em;text-transform:uppercase;font-family:var(--font-display);font-weight:600;">Saved Mockups</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:10px;letter-spacing:.06em;text-transform:uppercase;font-family:var(--font-display);font-weight:600;">Select Mockups for Collection</div>
         <div class="lb-mockup-grid" id="lb-mockup-grid">
           <div class="empty-state" style="grid-column:1/-1">No saved mockups yet.<br>Build and save mockups in the Studio tab first.</div>
         </div>
       </div>
 
-      <!-- Right: queue + settings + export -->
+      <!-- Right: settings + export -->
       <div class="lookbook-right">
-        <div style="font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--accent);">Export Queue</div>
-        <p style="font-size:11px;color:var(--text3);">Drag items to reorder. Each selected mockup becomes a page.</p>
+        <div style="font-family:var(--font-display);font-weight:700;font-size:14px;color:var(--accent);">Collection Settings</div>
 
+        <div class="field">
+          <label>Client Name</label>
+          <input type="text" id="lb-client-name" placeholder="e.g. mERC Clothing" />
+        </div>
+        <div class="field">
+          <label>Collection Subtitle</label>
+          <input type="text" id="lb-subtitle" placeholder="e.g. Spring 2025 · Custom Merch" />
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:500;">Client Logo(s) for Cover</div>
+        <p style="font-size:10px;color:var(--text3);margin-bottom:10px;line-height:1.5;">These appear large at the top of the lookbook page. Upload the client's actual logo file(s).</p>
+
+        <div class="field">
+          <label>Primary Logo</label>
+          <div class="img-upload-zone" id="zone-lb-logo1">
+            <input type="file" accept="image/png,image/jpeg" onchange="handleLbLogoUpload(event,0)" />
+            <div id="thumb-lb-logo1" style="display:none"><img class="thumb" id="img-lb-logo1" /></div>
+            <div class="upload-text" id="text-lb-logo1"><strong>Click to upload</strong>PNG or JPG</div>
+          </div>
+          <div class="img-actions">
+            <button class="btn btn-ghost btn-sm" onclick="useFromLibrary('lbLogo1')">📁 Library</button>
+            <button class="btn btn-danger" onclick="clearLbLogo(0)">Remove</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Secondary Logo <span style="font-size:10px;color:var(--text3)">(optional)</span></label>
+          <div class="img-upload-zone" id="zone-lb-logo2">
+            <input type="file" accept="image/png,image/jpeg" onchange="handleLbLogoUpload(event,1)" />
+            <div id="thumb-lb-logo2" style="display:none"><img class="thumb" id="img-lb-logo2" /></div>
+            <div class="upload-text" id="text-lb-logo2"><strong>Click to upload</strong>PNG or JPG</div>
+          </div>
+          <div class="img-actions">
+            <button class="btn btn-ghost btn-sm" onclick="useFromLibrary('lbLogo2')">📁 Library</button>
+            <button class="btn btn-danger" onclick="clearLbLogo(1)">Remove</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:500;">Selected <span id="lb-selected-count" style="color:var(--accent)">0</span> mockups</div>
         <div class="lb-queue" id="lb-queue">
           <div class="lb-empty" id="lb-queue-empty">No items selected yet.<br>Click mockups on the left to add them.</div>
         </div>
@@ -467,31 +508,19 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
         <div class="divider"></div>
 
         <div class="field">
-          <label>Client Name (Cover Page)</label>
-          <input type="text" id="lb-client-name" placeholder="e.g. mERC Clothing" />
-        </div>
-        <div class="field">
-          <label>Deck Subtitle</label>
-          <input type="text" id="lb-subtitle" placeholder="e.g. Spring 2025 Collection" />
-        </div>
-        <div class="field">
           <label>PDF Filename</label>
           <input type="text" id="lb-filename" placeholder="client-lookbook.pdf" />
         </div>
 
         <div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
-          <input type="checkbox" id="lb-cover" checked style="accent-color:var(--accent);" />
-          <label for="lb-cover" style="font-size:11px;color:var(--text2);cursor:pointer;">Include cover page</label>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="checkbox" id="lb-show-details" checked style="accent-color:var(--accent);" />
-          <label for="lb-show-details" style="font-size:11px;color:var(--text2);cursor:pointer;">Show print details on each page</label>
+          <input type="checkbox" id="lb-show-labels" checked style="accent-color:var(--accent);" />
+          <label for="lb-show-labels" style="font-size:11px;color:var(--text2);cursor:pointer;">Show item labels under each garment</label>
         </div>
 
         <div class="divider"></div>
 
         <button class="btn btn-primary" style="width:100%;" onclick="exportLookbook()">↓ Export Lookbook PDF</button>
-        <button class="btn btn-ghost btn-sm" style="width:100%;text-align:center;" onclick="clearLookbookQueue()">✕ Clear Queue</button>
+        <button class="btn btn-ghost btn-sm" style="width:100%;text-align:center;" onclick="clearLookbookQueue()">✕ Clear Selection</button>
       </div>
     </div>
   </div>
@@ -503,9 +532,10 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
     <div class="full-view-scroll">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
         <h2 style="font-family:var(--font-display);font-weight:800;font-size:18px;">Asset Library</h2>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="promptSaveBlank()">+ Save Blank</button>
-          <button class="btn btn-secondary btn-sm" onclick="promptSaveLogo()">+ Save Logo</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+          <button class="btn btn-secondary btn-sm" onclick="promptSaveBlank()">+ Blank</button>
+          <button class="btn btn-secondary btn-sm" onclick="promptSaveLogo()">+ Logo</button>
+          <button class="btn btn-secondary btn-sm" onclick="promptSaveMockupImage()">+ Mockup Image</button>
         </div>
       </div>
       <div class="library-section">
@@ -518,6 +548,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
       </div>
       <div class="library-section">
         <div class="library-section-title">Saved Mockups <span class="count" id="mockup-count">0</span></div>
+        <p style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.5;">Mockups saved here are available in the Lookbook Builder. You can also upload a finished mockup image directly (e.g. from a supplier) using <strong style="color:var(--text2)">+ Mockup Image</strong> above.</p>
         <div id="library-mockups"><div class="empty-state">No saved mockups yet.</div></div>
       </div>
     </div>
@@ -571,8 +602,8 @@ function defaultPageInfo() {
     frontLogoPosSize: { x: null, y: null, w: null, h: null },
     backLogoPosSize:  { x: null, y: null, w: null, h: null },
     // Colors are objects: { hex, name }
-    frontColors: [{ hex: '#FF0000', name: '' }, { hex: '#000000', name: '' }, { hex: '#FFFFFF', name: '' }],
-    backColors:  [{ hex: '#000000', name: '' }],
+    frontColors: [],
+    backColors:  [],
     printFront: { type: '', dims: '', loc: '' },
     printBack:  { type: '', dims: '', loc: '' },
     template: 1,
@@ -586,7 +617,8 @@ let fabricSide = null;
 let pickerTarget = null;
 
 // Lookbook state
-let lbQueue = []; // array of { mockupId, name, thumbnail, frontSrc, backSrc, title, subtitle, printFront, printBack, frontColors, backColors, frontLogoBase64, backLogoBase64 }
+let lbQueue = []; // array of { mockupId, name, thumbnail, frontSrc, backSrc, title, subtitle, ... }
+let lbLogos  = [null, null]; // base64 for up to 2 client logos shown on lookbook page
 
 // ── IndexedDB ─────────────────────────────────────────────────────
 let db = null;
@@ -1222,7 +1254,8 @@ async function loadMockupFromLibrary(id) {
 async function useFromLibrary(key) {
   if (!db){toast('Library empty','error');return;}
   pickerTarget=key;
-  const store=key.includes('Logo')?'logos':'blanks';
+  // lb logo pickers use the logos store
+  const store = (key.includes('Logo')||key==='lbLogo1'||key==='lbLogo2') ? 'logos' : 'blanks';
   const items=await dbGetAll(store);
   if(!items.length){toast('No '+(store==='logos'?'logos':'blanks')+' in library','error');return;}
   document.getElementById('picker-title').textContent='Select '+(store==='logos'?'Logo':'Blank');
@@ -1233,8 +1266,12 @@ async function useFromLibrary(key) {
     </div>`).join('');
   document.getElementById('library-picker-overlay').style.display='flex';
 }
-async function selectFromPicker(id,store) {
-  const item=await dbGet(store,id); if(!item||!pickerTarget) return;
+async function selectFromPicker(id, store) {
+  const item = await dbGet(store, id); if(!item||!pickerTarget) return;
+  // Handle lookbook logo slots
+  if (pickerTarget === 'lbLogo1') { lbLogos[0]=item.base64; updateLbLogoThumb(0,item.base64); closeLibraryPicker(); toast(`${item.name} loaded ✓`,'success'); return; }
+  if (pickerTarget === 'lbLogo2') { lbLogos[1]=item.base64; updateLbLogoThumb(1,item.base64); closeLibraryPicker(); toast(`${item.name} loaded ✓`,'success'); return; }
+  // Normal studio picker
   state.pages[state.currentPage][pickerTarget+'Base64']=item.base64;
   state.pages[state.currentPage][pickerTarget+'Img']=null;
   if(pickerTarget==='frontBlank'||pickerTarget==='frontLogo') state.pages[state.currentPage].frontCompositeBase64=null;
@@ -1315,6 +1352,8 @@ async function toggleLookbookItem(mockupId) {
 function renderLbQueue() {
   const queueEl = document.getElementById('lb-queue');
   const emptyEl = document.getElementById('lb-queue-empty');
+  const countEl = document.getElementById('lb-selected-count');
+  if (countEl) countEl.textContent = lbQueue.length;
   if (!lbQueue.length) {
     queueEl.innerHTML = '';
     queueEl.appendChild(emptyEl);
@@ -1354,152 +1393,210 @@ function removeLbQueueItem(i, e) {
 }
 function clearLookbookQueue() { lbQueue=[]; refreshLookbook(); }
 
-async function exportLookbook() {
-  if (!lbQueue.length) { toast('Add at least one item to the queue','error'); return; }
+// ── Lookbook logo upload handlers ─────────────────────────────────
+function handleLbLogoUpload(e, idx) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => { lbLogos[idx] = ev.target.result; updateLbLogoThumb(idx, lbLogos[idx]); };
+  r.readAsDataURL(file);
+}
+function clearLbLogo(idx) { lbLogos[idx] = null; updateLbLogoThumb(idx, null); }
+function updateLbLogoThumb(idx, b64) {
+  const n = idx + 1;
+  const thumb = document.getElementById(`thumb-lb-logo${n}`);
+  const text  = document.getElementById(`text-lb-logo${n}`);
+  const img   = document.getElementById(`img-lb-logo${n}`);
+  const zone  = document.getElementById(`zone-lb-logo${n}`);
+  if (b64) { img.src=b64; thumb.style.display='flex'; text.style.display='none'; zone.classList.add('has-image'); }
+  else     { thumb.style.display='none'; text.style.display=''; zone.classList.remove('has-image'); }
+}
+// Hook library picker for lb logos
+const _origUseFromLibrary = typeof useFromLibrary !== 'undefined' ? useFromLibrary : null;
 
-  const clientName = document.getElementById('lb-client-name').value.trim() || 'Client';
-  const deckSub    = document.getElementById('lb-subtitle').value.trim()    || '';
-  const filename   = document.getElementById('lb-filename').value.trim()    || 'jp-lookbook.pdf';
-  const includeCover   = document.getElementById('lb-cover').checked;
-  const showDetails    = document.getElementById('lb-show-details').checked;
+// ── Prompt save mockup image directly to library ──────────────────
+function promptSaveMockupImage() {
+  const inp = document.createElement('input'); inp.type='file'; inp.accept='image/png,image/jpeg';
+  inp.onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const name = prompt('Name for this mockup:', file.name.replace(/\.[^.]+$/,'')) || file.name;
+    const r = new FileReader();
+    r.onload = async ev => {
+      const snapshot = {
+        name, savedAt: Date.now(),
+        thumbnail: ev.target.result,
+        pageState: {
+          title: name, subtitle: '', mockupNum: '', pdfName: '', notes: '',
+          frontBlankBase64: null, backBlankBase64: null,
+          frontLogoBase64: null, backLogoBase64: null,
+          frontCompositeBase64: ev.target.result,  // treat the uploaded image as the front composite
+          backCompositeBase64: null,
+          frontColors: [], backColors: [],
+          printFront: {type:'',dims:'',loc:''}, printBack: {type:'',dims:'',loc:''},
+          template: 2, // single item
+          isExternalImage: true,
+        },
+      };
+      await dbSave('mockups', snapshot);
+      toast(`"${name}" added to library ✓`, 'success');
+      refreshLibrary();
+    };
+    r.readAsDataURL(file);
+  };
+  inp.click();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LOOKBOOK — ONE-PAGE COLLECTION PDF
+// ═══════════════════════════════════════════════════════════════════
+async function exportLookbook() {
+  if (!lbQueue.length) { toast('Select at least one mockup first', 'error'); return; }
+
+  const clientName  = document.getElementById('lb-client-name').value.trim() || 'Client Collection';
+  const deckSub     = document.getElementById('lb-subtitle').value.trim() || '';
+  const filename    = document.getElementById('lb-filename').value.trim() || 'jp-lookbook.pdf';
+  const showLabels  = document.getElementById('lb-show-labels').checked;
 
   setLoading(true);
   try {
     const pdfDoc = await PDFLib.PDFDocument.create();
     const { StandardFonts, rgb } = PDFLib;
 
+    // Use landscape for a wider collection view
+    const PW = 1080, PH = 810;
+    const page = pdfDoc.addPage([PW, PH]);
+    page.drawRectangle({ x:0, y:0, width:PW, height:PH, color:rgb(1,1,1) });
+
     const titleFont   = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont    = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const captionFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
-    const marginSide  = 35, marginTop = 25;
-    const titleColor  = rgb(.302,.306,.306);
+    const titleColor  = rgb(.15,.15,.15);
+    const margin = 36;
 
-    // Helper: draw standard JP header (logo + socials)
-    async function drawJpHeader(page) {
-      let logoBottomY = PAGE_HEIGHT - marginTop;
-      const jpLogoB64 = await getJpLogo();
-      if (jpLogoB64) {
-        const ji = await embedImg(pdfDoc, jpLogoB64);
-        if (ji) { const s=ji.scale(.70); const ly=PAGE_HEIGHT-s.height-marginTop; page.drawImage(ji,{x:marginSide,y:ly,width:s.width,height:s.height}); logoBottomY=ly; }
+    // ── HEADER BAND ───────────────────────────────────────────────
+    const headerH = 100;
+    page.drawRectangle({ x:0, y:PH-headerH, width:PW, height:headerH, color:rgb(.06,.06,.06) });
+
+    // JP logo top-left in header
+    const jpLogoB64 = await getJpLogo();
+    let headerLogoW = 0;
+    if (jpLogoB64) {
+      const ji = await embedImg(pdfDoc, jpLogoB64);
+      if (ji) {
+        const s = ji.scale(0.55);
+        page.drawImage(ji, { x:margin, y:PH-headerH+(headerH-s.height)/2, width:s.width, height:s.height });
+        headerLogoW = s.width + 20;
       }
-      const sfs=16,website='www.jointprinting.com',insta='@jointprinting';
-      const wW=boldFont.widthOfTextAtSize(website,sfs),wX=PAGE_WIDTH-marginSide-wW,wY=PAGE_HEIGHT-marginTop-sfs;
-      page.drawText(website,{x:wX,y:wY,size:sfs,font:boldFont,color:rgb(0,0,0)});
-      const gb=await getJpGlobe();if(gb){const gi=await embedImg(pdfDoc,gb);if(gi){const gd=gi.scale(1);page.drawImage(gi,{x:wX-gd.width*1.5,y:wY-(gd.height-sfs)/2,width:gd.width,height:gd.height});}}
-      const iY=wY-sfs*1.8;page.drawText(insta,{x:PAGE_WIDTH-marginSide-boldFont.widthOfTextAtSize(insta,sfs),y:iY,size:sfs,font:boldFont,color:rgb(0,0,0)});
-      const ib=await getJpInsta();if(ib){const ii=await embedImg(pdfDoc,ib);if(ii){const id=ii.scale(1.1);page.drawImage(ii,{x:wX-id.width*1.5,y:iY-(id.height-sfs)/2,width:id.width,height:id.height});}}
-      return logoBottomY;
     }
 
-    // ── COVER PAGE ──────────────────────────────────────────────
-    if (includeCover) {
-      const cover = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-      cover.drawRectangle({x:0,y:0,width:PAGE_WIDTH,height:PAGE_HEIGHT,color:rgb(1,1,1)});
-      await drawJpHeader(cover);
+    // Client logo(s) — centered in header band, displayed large
+    const clientLogos = lbLogos.filter(Boolean);
+    if (clientLogos.length) {
+      const logoAreaW = PW * 0.4;
+      const logoAreaX = (PW - logoAreaW) / 2;
+      const logoAreaY = PH - headerH + 10;
+      const logoAreaH = headerH - 20;
+      const logoSlotW = logoAreaW / clientLogos.length - 10;
 
-      // Large centered client name
-      const cnFs=48;
-      const cnW=boldFont.widthOfTextAtSize(clientName,cnFs);
-      cover.drawText(clientName, { x:(PAGE_WIDTH-cnW)/2, y:PAGE_HEIGHT/2+40, size:cnFs, font:boldFont, color:titleColor });
-
-      if (deckSub) {
-        const dsFs=22;
-        const dsW=titleFont.widthOfTextAtSize(deckSub,dsFs);
-        cover.drawText(deckSub, { x:(PAGE_WIDTH-dsW)/2, y:PAGE_HEIGHT/2-8, size:dsFs, font:titleFont, color:rgb(.5,.5,.5) });
+      for (let li = 0; li < clientLogos.length; li++) {
+        const img = await embedImg(pdfDoc, clientLogos[li]);
+        if (!img) continue;
+        const dims = img.scale(1);
+        const scale = Math.min(logoSlotW / dims.width, logoAreaH / dims.height, 1);
+        const lw = dims.width * scale, lh = dims.height * scale;
+        const lx = logoAreaX + li * (logoSlotW + 10) + (logoSlotW - lw) / 2;
+        const ly = logoAreaY + (logoAreaH - lh) / 2;
+        page.drawImage(img, { x:lx, y:ly, width:lw, height:lh });
       }
-
-      // Item count
-      const countStr=`${lbQueue.length} item${lbQueue.length!==1?'s':''}`;
-      const csFs=14;
-      const csW=titleFont.widthOfTextAtSize(countStr,csFs);
-      cover.drawText(countStr, { x:(PAGE_WIDTH-csW)/2, y:PAGE_HEIGHT/2-50, size:csFs, font:titleFont, color:rgb(.65,.65,.65) });
-
-      // Date
-      const dateStr=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-      const dW=titleFont.widthOfTextAtSize(dateStr,12);
-      cover.drawText(dateStr, { x:(PAGE_WIDTH-dW)/2, y:60, size:12, font:titleFont, color:rgb(.5,.5,.5) });
-
-      // Footer motto
-      cover.drawText('INNOVATION IN INK', { x:marginSide, y:marginTop/2+18, size:22, font:boldFont, color:titleColor });
+    } else {
+      // No client logo — show client name large
+      const cnFs = 28;
+      const cnW  = boldFont.widthOfTextAtSize(clientName, cnFs);
+      page.drawText(clientName, { x:(PW-cnW)/2, y:PH-headerH+(headerH-cnFs)/2+4, size:cnFs, font:boldFont, color:rgb(.91,1,.28) });
     }
 
-    // ── ITEM PAGES ──────────────────────────────────────────────
-    for (let qi = 0; qi < lbQueue.length; qi++) {
-      const item = lbQueue[qi];
-      const isSingle = item.template === 2;
-      const page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-      page.drawRectangle({x:0,y:0,width:PAGE_WIDTH,height:PAGE_HEIGHT,color:rgb(1,1,1)});
-      const logoBottomY = await drawJpHeader(page);
+    // Website top-right in header
+    const site = 'www.jointprinting.com', siteFs = 11;
+    const siteW = boldFont.widthOfTextAtSize(site, siteFs);
+    page.drawText(site, { x:PW-margin-siteW, y:PH-headerH+(headerH)/2+2, size:siteFs, font:boldFont, color:rgb(.55,.55,.55) });
 
-      // Title row
-      const tfs=28, stfs=20;
-      const titleY=logoBottomY-tfs*1.3, subtitleY=titleY-tfs;
-      if(item.title)    page.drawText(item.title,    {x:marginSide,y:titleY,   size:tfs, font:boldFont,  color:titleColor});
-      if(item.subtitle) page.drawText(item.subtitle, {x:marginSide,y:subtitleY,size:stfs,font:titleFont, color:titleColor});
+    // ── CLIENT NAME + SUBTITLE below header ───────────────────────
+    let textY = PH - headerH - 22;
+    if (clientLogos.length) {
+      // Show client name as text since logo is in the band
+      const cnFs2 = 18;
+      page.drawText(clientName, { x:margin, y:textY, size:cnFs2, font:boldFont, color:titleColor });
+      textY -= 20;
+    }
+    if (deckSub) {
+      page.drawText(deckSub, { x:margin, y:textY, size:13, font:titleFont, color:rgb(.5,.5,.5) });
+      textY -= 16;
+    }
+    textY -= 8;
 
-      // Mockup number top-right
-      if (item.mockupNum) {
-        const mnStr='Mockup '+item.mockupNum, mnFs=11;
-        const mnW=titleFont.widthOfTextAtSize(mnStr,mnFs);
-        page.drawText(mnStr,{x:PAGE_WIDTH-marginSide-mnW,y:titleY,size:mnFs,font:titleFont,color:rgb(.5,.5,.5)});
-      }
+    // ── GARMENT GRID ──────────────────────────────────────────────
+    // Fill the remaining space with a grid of all selected mockups
+    const gridAreaY = 50; // leave space for footer
+    const gridH = textY - gridAreaY;
+    const gridW = PW - margin * 2;
+    const count = lbQueue.length;
 
-      if (isSingle) {
-        // ── SINGLE ITEM LAYOUT ──
-        const imgW=PAGE_WIDTH*.55, imgH=imgW*1.25;
-        const imgX=(PAGE_WIDTH-imgW)/2, imgY=subtitleY-imgH-stfs;
-        if (item.frontSrc) { const img=await embedImg(pdfDoc,item.frontSrc); if(img)page.drawImage(img,{x:imgX,y:imgY,width:imgW,height:imgH}); }
-        else drawPlaceholder(page,imgX,imgY,imgW,imgH,'GARMENT',boldFont);
+    // Calculate optimal columns/rows
+    const cols = count <= 2 ? count : count <= 4 ? Math.min(count, 4) : count <= 6 ? 3 : Math.min(count, 5);
+    const rows = Math.ceil(count / cols);
+    const cellW = gridW / cols;
+    const cellH = gridH / rows;
+    const imgPad = 12;
+    const imgMaxW = cellW - imgPad * 2;
+    const imgMaxH = cellH - (showLabels ? 36 : imgPad * 2);
 
-        let capY=imgY-18;
-        if (showDetails) {
-          const cap=buildCaption(item.printFront);
-          if(cap.length){const cfs=14,clh=Math.ceil(cfs*1.3);page.drawText(cap.join('\n'),{x:marginSide,y:capY,maxWidth:PAGE_WIDTH-marginSide*2,size:cfs,lineHeight:clh,font:captionFont,color:rgb(0,0,0)});let lc=0;for(const s of cap)lc+=Math.ceil(captionFont.widthOfTextAtSize(s,cfs)/(PAGE_WIDTH-marginSide*2));capY-=(lc-1)*clh+clh;}
+    for (let i = 0; i < count; i++) {
+      const item = lbQueue[i];
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const cellX = margin + col * cellW;
+      const cellY = textY - (row + 1) * cellH;
+
+      // Draw subtle cell border
+      page.drawRectangle({ x:cellX+4, y:cellY+4, width:cellW-8, height:cellH-(showLabels?20:8), borderColor:rgb(.9,.9,.9), borderWidth:.5 });
+
+      // Choose front image — composite (with logo placed on it) is ideal
+      const src = item.frontSrc;
+      if (src) {
+        const img = await embedImg(pdfDoc, src);
+        if (img) {
+          const dims = img.scale(1);
+          const scale = Math.min(imgMaxW/dims.width, imgMaxH/dims.height);
+          const iw = dims.width*scale, ih = dims.height*scale;
+          const ix = cellX + (cellW-iw)/2;
+          const iy = cellY + cellH - (showLabels?32:imgPad) - ih;
+          page.drawImage(img, { x:ix, y:iy, width:iw, height:ih });
         }
-        if(item.frontLogoBase64){const li=await embedImg(pdfDoc,item.frontLogoBase64);const lbW=PAGE_WIDTH/2-marginSide*2;if(li)page.drawImage(li,{x:(PAGE_WIDTH-lbW)/2,y:capY-lbW-10,width:lbW,height:lbW});}
-        const fColors=normalizeColors(item.frontColors);
-        if(fColors.length) drawColorCircles(page,PAGE_WIDTH/2-80,capY-40,fColors,22,captionFont,PAGE_WIDTH/2+80);
-
       } else {
-        // ── FRONT + BACK LAYOUT ──
-        const imgW=PAGE_WIDTH/2-marginSide*1.5, imgH=imgW*1.25;
-        const frontX=marginSide, backX=PAGE_WIDTH-marginSide-imgW;
-        const imgY=subtitleY-imgH-stfs;
-
-        if(item.frontSrc){const img=await embedImg(pdfDoc,item.frontSrc);if(img)page.drawImage(img,{x:frontX,y:imgY,width:imgW,height:imgH});else drawPlaceholder(page,frontX,imgY,imgW,imgH,'SHIRT FRONT',boldFont);}
-        else drawPlaceholder(page,frontX,imgY,imgW,imgH,'SHIRT FRONT',boldFont);
-
-        if(item.backSrc){const img=await embedImg(pdfDoc,item.backSrc);if(img)page.drawImage(img,{x:backX,y:imgY,width:imgW,height:imgH});else drawPlaceholder(page,backX,imgY,imgW,imgH,'SHIRT BACK',boldFont);}
-        else drawPlaceholder(page,backX,imgY,imgW,imgH,'SHIRT BACK',boldFont);
-
-        let fc=imgY-18, bc=imgY-18;
-        if (showDetails) {
-          const cfs=14,clh=Math.ceil(cfs*1.3),capColor=rgb(0,0,0);
-          const frontCap=buildCaption(item.printFront), backCap=buildCaption(item.printBack);
-          if(frontCap.length){page.drawText(frontCap.join('\n'),{x:frontX,y:fc,maxWidth:imgW,size:cfs,lineHeight:clh,font:captionFont,color:capColor});let lc=0;for(const s of frontCap)lc+=Math.ceil(captionFont.widthOfTextAtSize(s,cfs)/imgW);fc-=(lc-1)*clh+clh;}
-          if(backCap.length) {page.drawText(backCap.join('\n'), {x:backX, y:bc,maxWidth:imgW,size:cfs,lineHeight:clh,font:captionFont,color:capColor});let lc=0;for(const s of backCap) lc+=Math.ceil(captionFont.widthOfTextAtSize(s,cfs)/imgW); bc-=(lc-1)*clh+clh;}
-        }
-
-        const lbW=PAGE_WIDTH/2-marginSide*2, lbH=lbW;
-        const logoY=Math.min(fc,bc)-lbH-10;
-        if(item.frontLogoBase64){const li=await embedImg(pdfDoc,item.frontLogoBase64);if(li)page.drawImage(li,{x:marginSide,y:logoY,width:lbW,height:lbH});}
-        else drawPlaceholder(page,marginSide,logoY,lbW,lbH,'LOGO FRONT',boldFont);
-        if(item.backLogoBase64) {const li=await embedImg(pdfDoc,item.backLogoBase64); if(li)page.drawImage(li,{x:backX,y:logoY,width:lbW,height:lbH});}
-        else drawPlaceholder(page,backX,logoY,lbW,lbH,'LOGO BACK',boldFont);
-
-        const circR=22, circY=logoY-circR*1.3;
-        const fColors=normalizeColors(item.frontColors), bColors=normalizeColors(item.backColors);
-        if(fColors.length) drawColorCircles(page, marginSide+circR, circY, fColors, circR, captionFont, marginSide+lbW);
-        if(bColors.length) drawColorCircles(page, backX+circR,      circY, bColors, circR, captionFont, backX+lbW);
+        // Placeholder
+        const px=cellX+imgPad, py=cellY+(showLabels?28:imgPad), pw=imgMaxW, ph=imgMaxH;
+        page.drawRectangle({ x:px, y:py, width:pw, height:ph, borderColor:rgb(.8,.8,.8), borderWidth:.5 });
+        const pLabel='NO IMAGE', pfs=10;
+        const ptw=captionFont.widthOfTextAtSize(pLabel,pfs);
+        page.drawText(pLabel, { x:px+pw/2-ptw/2, y:py+ph/2-pfs/2, size:pfs, font:captionFont, color:rgb(.75,.75,.75) });
       }
 
-      // Page footer
-      page.drawText('INNOVATION IN INK',{x:marginSide,y:marginTop/2+18,size:18,font:boldFont,color:titleColor});
-      // Page number
-      const pnStr=`${qi+1+(includeCover?1:0)}`, pnFs=10;
-      const pnW=titleFont.widthOfTextAtSize(pnStr,pnFs);
-      page.drawText(pnStr,{x:PAGE_WIDTH-marginSide-pnW,y:marginTop/2+18,size:pnFs,font:titleFont,color:rgb(.6,.6,.6)});
+      // Label below image
+      if (showLabels && item.name) {
+        const lfs = 9;
+        let label = item.name;
+        // Truncate if too long
+        while (label.length > 2 && boldFont.widthOfTextAtSize(label, lfs) > cellW - 12) label = label.slice(0,-1);
+        const lw2 = boldFont.widthOfTextAtSize(label, lfs);
+        page.drawText(label, { x:cellX+(cellW-lw2)/2, y:cellY+10, size:lfs, font:boldFont, color:rgb(.4,.4,.4) });
+      }
     }
+
+    // ── FOOTER ────────────────────────────────────────────────────
+    page.drawRectangle({ x:0, y:0, width:PW, height:44, color:rgb(.06,.06,.06) });
+    page.drawText('INNOVATION IN INK', { x:margin, y:14, size:13, font:boldFont, color:rgb(.35,.35,.35) });
+    const dateStr = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+    const dW = captionFont.widthOfTextAtSize(dateStr, 10);
+    page.drawText(dateStr, { x:PW-margin-dW, y:16, size:10, font:captionFont, color:rgb(.45,.45,.45) });
 
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes],{type:'application/pdf'});
@@ -1507,9 +1604,9 @@ async function exportLookbook() {
     const a    = document.createElement('a');
     a.href=url; a.download=filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-    toast(`Lookbook exported (${lbQueue.length+(includeCover?1:0)} pages) ✓`,'success');
+    toast(`Lookbook exported (${count} items) ✓`, 'success');
   } catch(e) {
-    console.error(e); toast('Lookbook export failed: '+e.message,'error');
+    console.error(e); toast('Lookbook export failed: '+e.message, 'error');
   } finally { setLoading(false); }
 }
 
