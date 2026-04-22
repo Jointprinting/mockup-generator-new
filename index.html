@@ -260,6 +260,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .page-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);cursor:pointer;transition:all .15s;border:none}
 .page-dot.active{background:var(--lime)}
 
+/* ── REFRESH BUTTON DIRTY STATE ── */
+#refresh-btn.dirty{color:var(--lime)!important;border-color:var(--lime)!important;animation:refresh-pulse 1.4s ease-in-out infinite}
+@keyframes refresh-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+#refresh-btn:hover{color:var(--text)!important;background:var(--surface3)!important;animation:none!important}
+
 /* ── LOADING / OVERLAY ── */
 #loading-overlay{
   position:absolute;inset:0;background:rgba(10,10,10,.75);
@@ -572,6 +577,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
         <button class="btn btn-danger" onclick="deletePage()">Del Page</button>
       </div>
       <div class="page-dots" id="page-dots"></div>
+      <button id="refresh-btn" class="btn btn-ghost btn-sm" onclick="manualRefresh()" title="Refresh preview" style="margin-left:auto;font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--border2);color:var(--text2);border-radius:var(--radius);cursor:pointer;background:var(--surface2);transition:all .15s">
+        <span id="refresh-icon" style="font-size:13px">↻</span> Refresh
+      </button>
     </div>
     <div id="pdf-canvas-wrapper">
       <canvas id="pdf-canvas"></canvas>
@@ -1396,7 +1404,10 @@ function closeLogoEditor() {
 
 // ── PDF Helpers ───────────────────────────────────────────────────
 function scheduleUpdate(){ clearTimeout(updateTimer); updateTimer=setTimeout(()=>{saveFormToState();renderPdfPreview();},400); }
-function liveUpdate(){     clearTimeout(updateTimer); updateTimer=setTimeout(()=>{saveFormToState();renderPdfPreview();},600); }
+function liveUpdate(){     clearTimeout(updateTimer); markPreviewDirty(); updateTimer=setTimeout(()=>{saveFormToState();renderPdfPreview();clearPreviewDirty();},2000); }
+function markPreviewDirty(){  const b=document.getElementById('refresh-btn'); if(b){b.classList.add('dirty');b.title='Changes pending — click to refresh';}}
+function clearPreviewDirty(){ const b=document.getElementById('refresh-btn'); if(b){b.classList.remove('dirty');b.title='Refresh preview';}}
+function manualRefresh(){ clearTimeout(updateTimer); saveFormToState(); renderPdfPreview(); clearPreviewDirty(); }
 function togglePrintPreview(){ state.showPrintPreview=!state.showPrintPreview; scheduleUpdate(); toast(state.showPrintPreview?'Preview borders ON':'Preview borders OFF'); }
 function resetCurrentPage(){ const t=state.pages[state.currentPage].template; state.pages[state.currentPage]=defaultPageInfo(); state.pages[state.currentPage].template=t; loadPageIntoForm(); scheduleUpdate(); toast('Page reset'); }
 function hexToRgb(hex){ hex=hex.replace(/^#/,''); if(hex.length===3)hex=hex.split('').map(c=>c+c).join(''); return PDFLib.rgb(parseInt(hex.substring(0,2),16)/255,parseInt(hex.substring(2,4),16)/255,parseInt(hex.substring(4,6),16)/255); }
@@ -1482,11 +1493,8 @@ async function renderTemplate1(pdfDoc,page,pg) {
   if(instaB64){const ii=await embedImg(pdfDoc,instaB64);if(ii){page.drawImage(ii,{x:rightX-instaW-icS-5,y:line2Y-1,width:icS,height:icS});}}
   page.drawText(instaStr,{x:rightX-instaW,y:line2Y,size:txtFs,font:titleFont,color:txtCol});
 
-  // Thin divider line under header
-  page.drawLine({start:{x:mS,y:PAGE_HEIGHT-HDR},end:{x:PAGE_WIDTH-mS,y:PAGE_HEIGHT-HDR},thickness:.6,color:rgb(.82,.82,.82)});
-
   // ── Title block — large and prominent ──────────────────────────
-  const titlePad=18;
+  const titlePad=14;
   const tBaseY=PAGE_HEIGHT-HDR-titlePad;
   if(pg.title){
     page.drawText(pg.title,{x:mS,y:tBaseY,size:30,font:boldFont,color:rgb(.08,.08,.08)});
@@ -1518,21 +1526,23 @@ async function renderTemplate1(pdfDoc,page,pg) {
   if(fc.length){for(const s of fc){page.drawText(s,{x:frontX,y:specY,size:capFs,font:captFont,color:capCol});specY-=capLH;}}
   specY=divY-16;
   if(bc.length){for(const s of bc){page.drawText(s,{x:backX,y:specY,size:capFs,font:captFont,color:capCol});specY-=capLH;}}
-  // Logo art boxes
+  // Logo art boxes — larger, centered under each garment column
   const boxY=Math.min(specY,divY-16-(Math.max(fc.length,bc.length)||0)*capLH)-14;
-  const boxSize=80;
-  if(pg.frontLogoBase64){const li=await embedImg(pdfDoc,pg.frontLogoBase64);if(li)page.drawImage(li,{x:frontX,y:boxY-boxSize,width:boxSize,height:boxSize});}
-  if(pg.backLogoBase64){const li=await embedImg(pdfDoc,pg.backLogoBase64);if(li)page.drawImage(li,{x:backX,y:boxY-boxSize,width:boxSize,height:boxSize});}
+  const boxSize=120;
+  const frontLogoX=frontX+imgW/2-boxSize/2;
+  const backLogoX=backX+imgW/2-boxSize/2;
+  if(pg.frontLogoBase64){const li=await embedImg(pdfDoc,pg.frontLogoBase64);if(li)page.drawImage(li,{x:frontLogoX,y:boxY-boxSize,width:boxSize,height:boxSize});}
+  if(pg.backLogoBase64){const li=await embedImg(pdfDoc,pg.backLogoBase64);if(li)page.drawImage(li,{x:backLogoX,y:boxY-boxSize,width:boxSize,height:boxSize});}
   // Color swatches
   const fColors=normalizeColors(pg.frontColors), bColors=normalizeColors(pg.backColors);
   drawColorCircles(page,frontX,boxY-boxSize-24,fColors,14,captFont,frontX+imgW);
   drawColorCircles(page,backX, boxY-boxSize-24,bColors,14,captFont,backX+imgW);
-  // Footer bar
+  // Footer bar — readable text
   page.drawRectangle({x:0,y:0,width:PAGE_WIDTH,height:40,color:rgb(.06,.06,.06)});
-  page.drawText('INNOVATION IN INK',{x:mS,y:13,size:12,font:boldFont,color:rgb(.3,.3,.3)});
+  page.drawText('INNOVATION IN INK',{x:mS,y:13,size:11,font:boldFont,color:rgb(.55,.70,.42)});
   const mn='Mockup '+(pg.mockupNum||'');
   const mW=titleFont.widthOfTextAtSize(mn,10);
-  page.drawText(mn,{x:PAGE_WIDTH-mS-mW,y:13,size:10,font:titleFont,color:rgb(.4,.4,.4)});
+  page.drawText(mn,{x:PAGE_WIDTH-mS-mW,y:13,size:10,font:titleFont,color:rgb(.62,.62,.62)});
 }
 
 async function renderTemplate2(pdfDoc,page,pg) {
@@ -1555,9 +1565,8 @@ async function renderTemplate2(pdfDoc,page,pg) {
   page.drawText(siteStr,{x:rightX-siteW,y:line1Y,size:txtFs,font:boldFont,color:rgb(.15,.36,.08)});
   if(instaB64){const ii=await embedImg(pdfDoc,instaB64);if(ii){page.drawImage(ii,{x:rightX-instaW-icS-5,y:line2Y-1,width:icS,height:icS});}}
   page.drawText(instaStr,{x:rightX-instaW,y:line2Y,size:txtFs,font:titleFont,color:rgb(.28,.28,.28)});
-  page.drawLine({start:{x:mS,y:PAGE_HEIGHT-HDR},end:{x:PAGE_WIDTH-mS,y:PAGE_HEIGHT-HDR},thickness:.6,color:rgb(.82,.82,.82)});
   // ── Title block ─────────────────────────────────────────────────
-  const titlePad=18;
+  const titlePad=14;
   const tBaseY=PAGE_HEIGHT-HDR-titlePad;
   if(pg.title)    page.drawText(pg.title,   {x:mS,y:tBaseY,   size:30,font:boldFont, color:rgb(.08,.08,.08)});
   if(pg.subtitle) page.drawText(pg.subtitle,{x:mS,y:tBaseY-26,size:15,font:titleFont,color:rgb(.40,.40,.40)});
@@ -1572,14 +1581,14 @@ async function renderTemplate2(pdfDoc,page,pg) {
   let specY=divY-16;
   const cap=buildCaption(pg.printFront);
   if(cap.length){for(const s of cap){page.drawText(s,{x:mS,y:specY,size:11,font:captFont,color:rgb(.22,.22,.22)});specY-=16;}}
-  if(pg.frontLogoBase64){const li=await embedImg(pdfDoc,pg.frontLogoBase64);if(li){const lbW=80,lbX=(PAGE_WIDTH-lbW)/2;page.drawImage(li,{x:lbX,y:specY-lbW-10,width:lbW,height:lbW});}}
+  if(pg.frontLogoBase64){const li=await embedImg(pdfDoc,pg.frontLogoBase64);if(li){const lbW=120,lbX=(PAGE_WIDTH-lbW)/2;page.drawImage(li,{x:lbX,y:specY-lbW-10,width:lbW,height:lbW});}}
   const fColors=normalizeColors(pg.frontColors);
-  drawColorCircles(page,mS,specY-98,fColors,14,captFont,PAGE_WIDTH-mS);
+  drawColorCircles(page,mS,specY-138,fColors,14,captFont,PAGE_WIDTH-mS);
   page.drawRectangle({x:0,y:0,width:PAGE_WIDTH,height:40,color:rgb(.06,.06,.06)});
-  page.drawText('INNOVATION IN INK',{x:mS,y:13,size:12,font:boldFont,color:rgb(.3,.3,.3)});
+  page.drawText('INNOVATION IN INK',{x:mS,y:13,size:11,font:boldFont,color:rgb(.55,.70,.42)});
   const mn='Mockup '+(pg.mockupNum||'');
   const mW=titleFont.widthOfTextAtSize(mn,10);
-  page.drawText(mn,{x:PAGE_WIDTH-mS-mW,y:13,size:10,font:titleFont,color:rgb(.4,.4,.4)});
+  page.drawText(mn,{x:PAGE_WIDTH-mS-mW,y:13,size:10,font:titleFont,color:rgb(.62,.62,.62)});
 }
 
 function drawColorCircles(page,startX,startY,colors,radius,font,maxX) {
