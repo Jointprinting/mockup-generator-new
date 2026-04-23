@@ -47,6 +47,50 @@
   --ease:cubic-bezier(.4,0,.2,1);
   --spring:cubic-bezier(.34,1.56,.64,1);
 }
+
+/* ─── Light mode ─────────────────────────────────────────────── */
+:root.light{
+  --bg:#f0f1f5;
+  --s0:#ffffff;
+  --s1:#f6f7fb;
+  --s2:#eceef5;
+  --s3:#e2e4ee;
+  --s4:#d6d9e8;
+  --bd:#d8dae8;
+  --bd2:#c8cad8;
+  --ac:#4a8e1c;
+  --ac2:#3a7016;
+  --ac3:#2e5a10;
+  --ac-dim:rgba(74,142,28,.08);
+  --ac-glow:rgba(74,142,28,.18);
+  --tx:#1a1c28;
+  --tx2:#4a5068;
+  --tx3:#8890aa;
+  --red:#cc3333;
+  --red-dim:rgba(204,51,51,.1);
+  --green:#1a8a4a;
+  --amber:#b07010;
+}
+
+/* ─── Theme toggle button ─────────────────────────────────────── */
+.theme-toggle{
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--bd2);
+  background:var(--s2);cursor:pointer;display:flex;align-items:center;
+  justify-content:center;font-size:14px;transition:all .2s var(--ease);
+  flex-shrink:0;
+}
+.theme-toggle:hover{background:var(--s3);border-color:var(--tx3);transform:rotate(20deg)}
+
+/* ─── Light mode specific overrides ─────────────────────────── */
+:root.light{--canvas-bg:#e4e6f0}
+:root.light #header{background:rgba(240,241,245,.96)}
+:root.light #pdf-canvas-wrapper{box-shadow:0 8px 40px rgba(100,110,140,.2),0 2px 8px rgba(100,110,140,.15)}
+:root.light .panel{border-color:var(--bd)}
+:root.light .modal-box{box-shadow:0 12px 48px rgba(100,110,140,.2)}
+:root.light .btn-ac{background:#5aab22;color:#fff}
+:root.light .btn-ac:hover{background:#4a9018}
+:root.light .brand-pip{background:var(--ac)}
+:root.light .nav-tab::after{background:var(--ac)}
 html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;overflow:hidden;-webkit-font-smoothing:antialiased}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -163,7 +207,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--f);
 
 /* ─── Canvas area ─────────────────────────────────────────────── */
 #canvas-area{
-  background:#090a10;display:flex;flex-direction:column;
+  background:var(--canvas-bg, #090a10);display:flex;flex-direction:column;
   align-items:center;overflow:auto;padding:12px;gap:10px;position:relative;
   animation:cvIn .28s var(--ease) both;
 }
@@ -403,6 +447,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--f);
     <button class="nav-tab" onclick="switchTab('library',this)">Library</button>
   </nav>
   <div class="hdr-right">
+    <button class="theme-toggle" id="theme-toggle-btn" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
     <button class="btn btn-secondary btn-sm" onclick="openSsModal()">⬡ S&amp;S Finder</button>
     <button class="btn btn-ghost btn-sm" onclick="togglePrintPreview()">Preview</button>
     <button class="btn btn-ac btn-sm" onclick="exportPdf()">↓ Export PDF</button>
@@ -2230,6 +2275,24 @@ const LB_MODE_DESCS = {
   color:'Show the same garment in multiple color options side-by-side. Perfect for color selection presentations.',
   ad:'Clean, magazine-style pages — one garment per page, logo tastefully placed, no spec details. Looks like a real catalog or ad.',
 };
+
+// ── Theme ─────────────────────────────────────────────────────────
+function toggleTheme() {
+  const isLight = document.documentElement.classList.toggle('light');
+  localStorage.setItem('jp_theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('theme-toggle-btn');
+  if (btn) btn.textContent = isLight ? '☀️' : '🌙';
+}
+(function applyTheme() {
+  const saved = localStorage.getItem('jp_theme');
+  if (saved === 'light') {
+    document.documentElement.classList.add('light');
+    requestAnimationFrame(() => {
+      const btn = document.getElementById('theme-toggle-btn');
+      if (btn) btn.textContent = '☀️';
+    });
+  }
+})();
 
 // ── Init ──────────────────────────────────────────────────────────
 async function init() {
