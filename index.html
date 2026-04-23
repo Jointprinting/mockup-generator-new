@@ -333,6 +333,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--f);
 .ss-prev:hover{border-color:var(--ac)}
 .ss-prev img{width:100%;height:100%;object-fit:contain}
 .ss-prev-lbl{font-size:9px;color:var(--tx3);font-family:var(--fm);position:absolute;bottom:4px;left:0;right:0;text-align:center;letter-spacing:.06em;text-transform:uppercase}
+.ss-prev-lbl.loaded,.ss-prev.loaded .ss-prev-lbl{color:var(--ac)}
 .ss-prev.loaded .ss-prev-lbl{color:var(--ac)}
 /* GitHub catalog */
 .gh-box{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rl);padding:12px;display:flex;flex-direction:column;gap:9px}
@@ -1137,9 +1138,14 @@ function tryLoadImage(url) {
 function openSsModal() {
   ssLoadedFront = null; ssLoadedBack = null;
   document.getElementById('ss-modal-overlay').style.display = 'flex';
-  document.getElementById('ss-auto-status').textContent = '';
-  document.getElementById('ss-prev-front').innerHTML = '<div class="prev-label">FRONT</div>';
-  document.getElementById('ss-prev-back').innerHTML = '<div class="prev-label">BACK</div>';
+  const statusEl = document.getElementById('ss-auto-status');
+  if (statusEl) statusEl.textContent = '';
+  const pf = document.getElementById('ss-prev-front');
+  const pb = document.getElementById('ss-prev-back');
+  if (pf) pf.innerHTML = '<div class="ss-prev-lbl">Front</div>';
+  if (pb) pb.innerHTML = '<div class="ss-prev-lbl">Back</div>';
+  if (pf) pf.classList.remove('loaded');
+  if (pb) pb.classList.remove('loaded');
 }
 function closeSsModal() {
   document.getElementById('ss-modal-overlay').style.display = 'none';
@@ -1154,34 +1160,7 @@ function buildSsUrl() {
     link.style.display = 'none';
   }
 }
-  const status = document.getElementById('ss-auto-status');
-  status.textContent = 'Trying...';
-  // Try common S&S image URL patterns
-  const patterns = [
-    [`https://www.ssactivewear.com/images/product_images/${style}_${color}_f.jpg`,
-     `https://www.ssactivewear.com/images/product_images/${style}_${color}_b.jpg`],
-    [`https://www.ssactivewear.com/images/ProductImages/${style}-${color}-1.jpg`,
-     `https://www.ssactivewear.com/images/ProductImages/${style}-${color}-2.jpg`],
-    [`https://cdni.ssactivewear.com/${style.toLowerCase()}/${color.toLowerCase()}_front.jpg`,
-     `https://cdni.ssactivewear.com/${style.toLowerCase()}/${color.toLowerCase()}_back.jpg`],
-  ];
-  let found = false;
-  for (const [fUrl, bUrl] of patterns) {
-    const [fOk, bOk] = await Promise.all([tryLoadImage(fUrl), tryLoadImage(bUrl)]);
-    if (fOk || bOk) {
-      if (fOk) { document.getElementById('ss-front-url').value = fUrl; await previewSsUrl('front', fUrl); }
-      if (bOk) { document.getElementById('ss-back-url').value = bUrl;  await previewSsUrl('back', bUrl); }
-      status.textContent = '✓ Found images!';
-      status.style.color = 'var(--success)';
-      found = true; break;
-    }
-  }
-  if (!found) {
-    status.textContent = 'Not found – paste URLs manually';
-    status.style.color = 'var(--text3)';
-    toast('Auto-load failed. Paste image URLs from S&S manually.', 'warning');
-  }
-}
+
 async function testSsUrl(side) {
   const urlId = side==='front'?'ss-front-url':'ss-back-url';
   const url = document.getElementById(urlId).value.trim();
@@ -1193,17 +1172,18 @@ async function testSsUrl(side) {
 async function previewSsUrl(side, url) {
   const containerId = side==='front'?'ss-prev-front':'ss-prev-back';
   const container = document.getElementById(containerId);
+  if (!container) return;
   const b64 = await urlToBase64(url);
   if (b64) {
     if (side==='front') ssLoadedFront = b64;
     else ssLoadedBack = b64;
-    container.innerHTML = `<img src="${b64}" style="width:100%;height:100%;object-fit:contain"/><div class="prev-label loaded">${side.toUpperCase()} ✓</div>`;
+    container.innerHTML = `<img src="${b64}" style="width:100%;height:100%;object-fit:contain"/><div class="ss-prev-lbl loaded">${side.toUpperCase()} ✓</div>`;
   } else {
-    // Fallback: just show img tag directly (might work for display only)
     if (side==='front') ssLoadedFront = url;
     else ssLoadedBack = url;
-    container.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain" crossorigin="anonymous"/><div class="prev-label loaded">${side.toUpperCase()} ✓</div>`;
+    container.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:contain" crossorigin="anonymous"/><div class="ss-prev-lbl loaded">${side.toUpperCase()} ✓</div>`;
   }
+  container.classList.add('loaded');
 }
 async function importSsImages() {
   const fUrl = document.getElementById('ss-front-url').value.trim();
