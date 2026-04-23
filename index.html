@@ -3,583 +3,499 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>JP Mockup Studio v2</title>
+<title>JP Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Bebas+Neue&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 <style>
+/* ─── Reset ─────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ─── Design tokens ─────────────────────────────────────────── */
 :root{
-  --bg:#0a0a0a;
-  --surface:#131313;
-  --surface2:#1b1b1b;
-  --surface3:#232323;
-  --surface4:#2c2c2c;
-  --border:#282828;
-  --border2:#363636;
-  --green:#436c30;
-  --green2:#527d3a;
-  --green3:#3a5c27;
-  --lime:#dde069;
-  --lime2:#c8cc52;
-  --lime-dim:rgba(221,224,105,.12);
-  --text:#f0f0f0;
-  --text2:#9a9a9a;
-  --text3:#565656;
-  --danger:#e05c5c;
-  --success:#5ce097;
-  --warning:#f0b429;
-  --radius:5px;
-  --radius-lg:8px;
-  --font-display:'Bebas Neue',sans-serif;
-  --font-body:'Barlow',sans-serif;
-  --font-cond:'Barlow Condensed',sans-serif;
-  --font-mono:'JetBrains Mono',monospace;
+  --bg:#0c0d13;
+  --s0:#12141e;
+  --s1:#181a26;
+  --s2:#1e2030;
+  --s3:#252838;
+  --s4:#2d3044;
+  --bd:#232538;
+  --bd2:#2e3248;
+  --ac:#9dda4c;         /* lime accent */
+  --ac2:#4a7e20;        /* dark accent */
+  --ac3:#3a6418;
+  --ac-dim:rgba(157,218,76,.08);
+  --ac-glow:rgba(157,218,76,.2);
+  --tx:#e8eaf4;
+  --tx2:#8892b0;
+  --tx3:#424b68;
+  --red:#e05c5c;
+  --red-dim:rgba(224,92,92,.12);
+  --green:#4edd96;
+  --amber:#e8a830;
+  --r:6px;
+  --rl:10px;
+  --rxl:14px;
+  --f:'DM Sans',system-ui,sans-serif;
+  --fb:'Bebas Neue',sans-serif;
+  --fm:'JetBrains Mono',monospace;
+  --hh:48px;
+  --pl:264px;
+  --pr:286px;
+  --ease:cubic-bezier(.4,0,.2,1);
+  --spring:cubic-bezier(.34,1.56,.64,1);
 }
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:13px;overflow:hidden}
-/* ── HEADER ── */
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--f);font-size:13px;overflow:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--tx3)}
+
+/* ─── Header ──────────────────────────────────────────────────── */
 #header{
-  position:fixed;top:0;left:0;right:0;height:52px;
-  background:var(--surface);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;padding:0 18px;gap:16px;z-index:50;
+  position:fixed;inset:0 0 auto;height:var(--hh);z-index:60;
+  background:rgba(12,13,19,.96);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;padding:0 16px;gap:0;
 }
-.logo-mark{
-  display:flex;align-items:center;gap:10px;text-decoration:none;
-  font-family:var(--font-display);letter-spacing:.04em;
+.brand{display:flex;align-items:center;gap:8px;flex-shrink:0;user-select:none}
+.brand-pip{width:7px;height:7px;border-radius:50%;background:var(--ac);box-shadow:0 0 10px var(--ac-glow);flex-shrink:0}
+.brand-name{font-family:var(--fb);font-size:19px;letter-spacing:.07em;color:var(--tx);line-height:1}
+.hdr-div{width:1px;height:16px;background:var(--bd2);margin:0 14px;flex-shrink:0}
+.nav-tabs{display:flex;height:var(--hh)}
+.nav-tab{
+  height:100%;padding:0 15px;border:none;background:transparent;
+  font-family:var(--f);font-size:12.5px;font-weight:500;letter-spacing:.01em;
+  color:var(--tx3);cursor:pointer;position:relative;transition:color .15s var(--ease);
 }
-.logo-mark .lm-jp{font-size:22px;color:var(--lime);line-height:1}
-.logo-mark .lm-sep{width:1px;height:20px;background:var(--border2)}
-.logo-mark .lm-text{font-size:14px;color:var(--text2);letter-spacing:.08em}
-.header-tabs{display:flex;gap:2px;margin-left:12px}
-.htab{
-  font-family:var(--font-mono);font-size:11px;padding:6px 14px;
-  border-radius:var(--radius);border:none;background:none;
-  color:var(--text2);cursor:pointer;transition:all .15s;letter-spacing:.03em;
+.nav-tab::after{
+  content:'';position:absolute;bottom:0;left:12px;right:12px;height:2px;
+  background:var(--ac);border-radius:2px 2px 0 0;
+  transform:scaleX(0);transform-origin:center;transition:transform .2s var(--ease);
 }
-.htab:hover{color:var(--text);background:var(--surface3)}
-.htab.active{color:var(--lime);background:var(--surface3);border-bottom:2px solid var(--lime)}
-.header-right{margin-left:auto;display:flex;align-items:center;gap:8px}
-.ss-search-btn{
-  display:flex;align-items:center;gap:6px;
-  background:var(--green3);border:1px solid var(--green2);color:#d6f0c6;
-  font-family:var(--font-mono);font-size:11px;padding:6px 12px;
-  border-radius:var(--radius);cursor:pointer;transition:all .15s;
-}
-.ss-search-btn:hover{background:var(--green2)}
-.ss-search-btn .ss-icon{font-size:13px}
+.nav-tab:hover{color:var(--tx2)}
+.nav-tab.active{color:var(--tx)}
+.nav-tab.active::after{transform:scaleX(1)}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:6px}
 
-/* ── LAYOUT ── */
-#app{padding-top:52px;height:100vh;display:flex;flex-direction:column}
-#views{flex:1;overflow:hidden;display:flex;flex-direction:column}
+/* ─── Buttons ─────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  font-family:var(--f);font-size:12px;font-weight:500;letter-spacing:.01em;
+  border-radius:var(--r);border:1px solid transparent;
+  cursor:pointer;transition:all .14s var(--ease);white-space:nowrap;
+  padding:6px 12px;line-height:1;
+}
+.btn:active{transform:scale(.96)}
+.btn-ac{background:var(--ac);color:#0f1a06;border-color:rgba(0,0,0,.1);font-weight:600}
+.btn-ac:hover{background:#b3e864;box-shadow:0 0 0 3px var(--ac-dim)}
+.btn-primary{background:var(--ac2);border-color:var(--ac3);color:#c8f090}
+.btn-primary:hover{background:#587a25}
+.btn-secondary{background:var(--s2);border-color:var(--bd2);color:var(--tx2)}
+.btn-secondary:hover{background:var(--s3);color:var(--tx);border-color:var(--tx3)}
+.btn-ghost{background:transparent;border-color:transparent;color:var(--tx2)}
+.btn-ghost:hover{background:var(--s2);color:var(--tx);border-color:var(--bd2)}
+.btn-danger{background:var(--red-dim);border-color:transparent;color:var(--red)}
+.btn-danger:hover{background:rgba(224,92,92,.2);border-color:rgba(224,92,92,.25)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-xs{padding:2px 7px;font-size:10px;border-radius:4px}
+.btn-icon{padding:5px 7px}
+.btn-full{width:100%;justify-content:center}
 
-/* ── STUDIO 3-COLUMN ── */
+/* ─── Layout ──────────────────────────────────────────────────── */
+#app{padding-top:var(--hh);height:100vh;display:flex;flex-direction:column}
+#views{flex:1;overflow:hidden}
 #studio-view{
-  display:grid;grid-template-columns:276px 1fr 304px;
+  display:grid;grid-template-columns:var(--pl) 1fr var(--pr);
   height:100%;overflow:hidden;
 }
 #studio-view.hidden{display:none}
 
-/* ── PANELS ── */
-.panel{background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
-.panel-left{border-right:1px solid var(--border)}
-.panel-right{border-left:1px solid var(--border)}
+/* ─── Panels ──────────────────────────────────────────────────── */
+.panel{background:var(--s0);display:flex;flex-direction:column;overflow:hidden}
+.panel-left{border-right:1px solid var(--bd);animation:panelL .24s var(--ease) both}
+.panel-right{border-left:1px solid var(--bd);animation:panelR .24s var(--ease) .04s both}
+@keyframes panelL{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes panelR{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
 .panel-scroll{overflow-y:auto;flex:1}
-.panel-scroll::-webkit-scrollbar{width:4px}
-.panel-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.psec{border-bottom:1px solid var(--border);padding:14px 15px}
-.psec-title{
-  font-family:var(--font-mono);font-size:9px;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--text3);margin-bottom:11px;
-  display:flex;align-items:center;gap:6px;
-}
-.psec-title .dot{width:4px;height:4px;border-radius:50%;background:var(--green);flex-shrink:0}
+.psec{border-bottom:1px solid var(--bd);padding:13px 14px}
+.psec:last-child{border-bottom:none}
+.psec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.psec-lbl{font-family:var(--fm);font-size:9px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--tx3)}
 
-/* ── S&S FINDER ── */
-.ss-panel{
-  background:linear-gradient(180deg,rgba(67,108,48,.18) 0%,transparent 100%);
-  border:1px solid rgba(67,108,48,.4);border-radius:var(--radius-lg);
-  padding:12px;margin:0;
-}
-.ss-panel-header{
-  display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
-}
-.ss-badge{
-  font-family:var(--font-cond);font-size:11px;font-weight:700;
-  background:var(--green);color:#c8f0b0;padding:3px 8px;border-radius:3px;letter-spacing:.06em;
-}
-.ss-link{
-  font-size:10px;color:var(--lime);text-decoration:none;
-  border:1px solid rgba(221,224,105,.3);border-radius:3px;padding:2px 7px;
-  transition:all .15s;font-family:var(--font-mono);
-}
-.ss-link:hover{background:var(--lime-dim);border-color:var(--lime)}
-.ss-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
-.ss-url-row{display:flex;gap:5px;margin-bottom:5px;align-items:center}
-.ss-url-label{font-size:9px;color:var(--text3);font-family:var(--font-mono);width:32px;flex-shrink:0;letter-spacing:.04em}
-.ss-url-input{
-  flex:1;background:var(--surface3);border:1px solid var(--border2);border-radius:3px;
-  color:var(--text2);font-family:var(--font-mono);font-size:10px;padding:4px 7px;outline:none;
-}
-.ss-url-input:focus{border-color:var(--lime);color:var(--text)}
-.ss-url-input::placeholder{color:var(--text3)}
-.ss-actions{display:flex;gap:5px;margin-top:8px}
-.ss-preview-row{display:flex;gap:8px;margin-top:8px}
-.ss-prev-thumb{
-  flex:1;aspect-ratio:1;background:var(--surface3);border-radius:3px;
-  border:1px solid var(--border2);overflow:hidden;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;transition:border-color .15s;position:relative;
-}
-.ss-prev-thumb:hover{border-color:var(--lime)}
-.ss-prev-thumb img{width:100%;height:100%;object-fit:contain}
-.ss-prev-thumb .prev-label{font-size:9px;color:var(--text3);font-family:var(--font-mono);position:absolute;bottom:3px;left:0;right:0;text-align:center}
-.ss-prev-thumb.loaded .prev-label{color:var(--lime);font-weight:500}
-.ss-loading-dot{
-  width:6px;height:6px;border-radius:50%;background:var(--lime);
-  animation:pulse-dot .8s ease-in-out infinite;
-}
-@keyframes pulse-dot{0%,100%{opacity:.3;transform:scale(.7)}50%{opacity:1;transform:scale(1)}}
-
-/* ── UPLOAD ZONES ── */
-.upload-pair{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+/* ─── Upload zones ────────────────────────────────────────────── */
+.upload-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
 .upload-zone{
-  border:1px dashed var(--border2);border-radius:var(--radius);
-  padding:8px 4px;text-align:center;cursor:pointer;transition:all .15s;
-  position:relative;overflow:hidden;min-height:64px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
-  background:var(--surface3);
+  border:1.5px dashed var(--bd2);border-radius:var(--rl);
+  min-height:74px;cursor:pointer;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  background:var(--s1);transition:all .18s var(--ease);
 }
-.upload-zone:hover{border-color:var(--lime);background:rgba(221,224,105,.04)}
-.upload-zone.has-image{border-style:solid;border-color:var(--green)}
-.upload-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-.upload-zone .uz-thumb{width:38px;height:38px;object-fit:contain;border-radius:2px}
-.upload-zone .uz-label{font-size:9px;color:var(--text3);font-family:var(--font-mono);letter-spacing:.04em}
-.upload-zone .uz-title{font-size:10px;color:var(--text2);font-weight:500}
-.upload-zone.has-image .uz-title{color:var(--lime)}
-.img-action-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.upload-zone:hover{border-color:var(--ac);background:var(--ac-dim);box-shadow:inset 0 0 0 1px var(--ac-dim)}
+.upload-zone.has-image{border-style:solid;border-color:var(--ac2)}
+.upload-zone.has-image:hover{border-color:var(--ac)}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.uz-wrap{width:100%;height:100%;padding:4px;display:flex;align-items:center;justify-content:center}
+.uz-thumb{max-width:54px;max-height:54px;object-fit:contain;border-radius:3px}
+.uz-ico{font-size:22px;color:var(--tx3);transition:color .15s;line-height:1;text-align:center}
+.upload-zone:hover .uz-ico{color:var(--ac)}
+.uz-title{font-size:11px;font-weight:500;color:var(--tx2)}
+.uz-sub{font-family:var(--fm);font-size:8.5px;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase}
+.upload-zone.has-image .uz-title{color:var(--ac)}
+.img-actions{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
 
-/* ── PLACEMENT PRESETS ── */
-.placement-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+/* ─── Placement ───────────────────────────────────────────────── */
+.place-side{display:flex;gap:3px;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:3px;margin-bottom:9px}
+.side-pill{flex:1;padding:5px;border:none;border-radius:4px;background:transparent;font-family:var(--fm);font-size:9px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);cursor:pointer;transition:all .15s var(--ease)}
+.side-pill.active{background:var(--s4);color:var(--ac);box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.place-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .place-btn{
-  background:var(--surface3);border:1px solid var(--border2);border-radius:var(--radius);
-  padding:7px 4px;cursor:pointer;transition:all .15s;font-family:var(--font-mono);
-  font-size:9px;color:var(--text2);text-align:center;letter-spacing:.04em;
+  background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);
+  padding:7px 4px;cursor:pointer;transition:all .15s var(--ease);
   display:flex;flex-direction:column;align-items:center;gap:3px;
+  font-family:var(--fm);font-size:8.5px;color:var(--tx3);letter-spacing:.04em;text-transform:uppercase;
 }
-.place-btn:hover{border-color:var(--lime);color:var(--lime);background:var(--lime-dim)}
-.place-btn .place-icon{font-size:14px}
-.place-side-toggle{display:flex;gap:4px;margin-bottom:8px}
-.side-pill{
-  flex:1;text-align:center;padding:5px;border-radius:3px;cursor:pointer;
-  font-family:var(--font-mono);font-size:10px;border:1px solid var(--border2);
-  color:var(--text3);transition:all .15s;background:none;
-}
-.side-pill.active{background:var(--green);border-color:var(--green);color:#d6f0c6}
+.place-btn:hover{background:var(--s2);border-color:var(--ac);color:var(--ac)}
+.place-btn:active{transform:scale(.93)}
+.place-pip{width:5px;height:5px;border-radius:50%;background:currentColor}
 
-/* ── FORM ELEMENTS ── */
-.field{margin-bottom:9px}
-.field label{display:block;font-size:10px;color:var(--text2);margin-bottom:4px;font-family:var(--font-mono);letter-spacing:.03em}
-.field input,.field select,.field textarea{
-  width:100%;background:var(--surface3);border:1px solid var(--border2);
-  border-radius:var(--radius);color:var(--text);font-family:var(--font-mono);
-  font-size:12px;padding:7px 9px;outline:none;transition:border-color .15s;
-}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--lime)}
-.field textarea{resize:vertical;min-height:52px;line-height:1.5}
-.field select option{background:var(--surface3)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-
-/* ── BUTTONS ── */
-.btn{
-  font-family:var(--font-mono);font-size:11px;padding:7px 13px;
-  border-radius:var(--radius);border:none;cursor:pointer;
-  transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
-}
-.btn-primary{background:var(--lime);color:#1a1a00;font-weight:600}
-.btn-primary:hover{background:var(--lime2)}
-.btn-green{background:var(--green);color:#d0f0b8;border:1px solid var(--green2)}
-.btn-green:hover{background:var(--green2)}
-.btn-secondary{background:var(--surface3);color:var(--text);border:1px solid var(--border2)}
-.btn-secondary:hover{border-color:var(--lime);color:var(--lime)}
-.btn-ghost{background:none;color:var(--text2);border:1px solid transparent}
-.btn-ghost:hover{color:var(--text);border-color:var(--border2)}
-.btn-danger{background:none;color:var(--danger);border:1px solid transparent;font-size:10px;padding:4px 7px}
-.btn-danger:hover{background:rgba(224,92,92,.1);border-color:var(--danger)}
-.btn-sm{padding:5px 9px;font-size:10px}
-.btn-xs{padding:3px 7px;font-size:9px}
-.btn-full{width:100%;justify-content:center}
-.btn-icon{padding:5px;font-size:13px}
-
-/* ── COLOR SWATCHES ── */
-.swatch-grid{display:flex;flex-wrap:wrap;gap:5px}
-.swatch-item{display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--surface3);border:1px solid var(--border2);border-radius:5px;padding:6px}
-.swatch-item input[type="color"]{width:26px;height:26px;padding:2px;border:1px solid var(--border2);border-radius:50%;background:var(--surface3);cursor:pointer;-webkit-appearance:none}
-.swatch-item input[type="color"]::-webkit-color-swatch-wrapper{padding:0;border-radius:50%}
-.swatch-item input[type="color"]::-webkit-color-swatch{border:none;border-radius:50%}
-.swatch-hex{font-size:9px;color:var(--text3);font-family:var(--font-mono)}
-.swatch-name-in{font-size:9px;width:64px;background:var(--surface3);border:1px solid var(--border2);border-radius:3px;color:var(--text2);padding:2px 4px;font-family:var(--font-mono);outline:none}
-.swatch-name-in:focus{border-color:var(--lime);color:var(--text)}
-.add-swatch{width:26px;height:26px;border-radius:50%;border:1px dashed var(--border2);background:none;color:var(--text2);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;align-self:center}
-.add-swatch:hover{border-color:var(--lime);color:var(--lime)}
-
-/* ── TEMPLATE OPTIONS ── */
-.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.tpl-opt{
-  border:2px solid var(--border);border-radius:var(--radius-lg);padding:10px 6px;
-  text-align:center;cursor:pointer;transition:all .15s;font-family:var(--font-mono);
-  font-size:10px;background:none;color:var(--text2);
-}
-.tpl-opt:hover{border-color:var(--text2);color:var(--text)}
-.tpl-opt.active{border-color:var(--lime);color:var(--lime);background:var(--lime-dim)}
-.tpl-opt .tpl-icon{font-size:18px;display:block;margin-bottom:3px}
-
-/* ── CANVAS AREA ── */
+/* ─── Canvas area ─────────────────────────────────────────────── */
 #canvas-area{
-  background:#111;display:flex;flex-direction:column;
-  align-items:center;justify-content:flex-start;overflow:auto;
-  padding:16px;gap:12px;position:relative;
+  background:#090a10;display:flex;flex-direction:column;
+  align-items:center;overflow:auto;padding:12px;gap:10px;position:relative;
+  animation:cvIn .28s var(--ease) both;
 }
-#canvas-area::-webkit-scrollbar{width:5px;height:5px}
-#canvas-area::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-#canvas-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;width:100%}
+@keyframes cvIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+#canvas-toolbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;width:100%;max-width:720px}
+.page-nav{display:flex;align-items:center;gap:4px}
+.page-badge{background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r);padding:4px 10px;font-family:var(--fm);font-size:10px;min-width:70px;text-align:center;color:var(--tx2)}
+.page-dots{display:flex;gap:4px;align-items:center}
+.page-dot{width:6px;height:6px;border-radius:50%;background:var(--bd2);cursor:pointer;border:none;transition:all .15s}
+.page-dot:hover{background:var(--tx3)}
+.page-dot.active{background:var(--ac)}
 #pdf-canvas-wrapper{
-  position:relative;box-shadow:0 8px 48px rgba(0,0,0,.7);
-  border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);
+  position:relative;box-shadow:0 20px 70px rgba(0,0,0,.88),0 4px 20px rgba(0,0,0,.5);
+  border-radius:var(--r);overflow:hidden;border:1px solid var(--bd);
 }
 #pdf-canvas{display:block;max-width:100%}
-
-/* ── PAGE NAV ── */
-.page-nav{display:flex;align-items:center;gap:8px}
-.page-badge{
-  background:var(--surface3);border:1px solid var(--border2);
-  border-radius:4px;padding:3px 9px;font-size:11px;min-width:64px;
-  text-align:center;font-family:var(--font-mono);
+#refresh-btn{
+  margin-left:auto;font-family:var(--fm);font-size:10px;
+  display:flex;align-items:center;gap:4px;padding:4px 10px;
+  border:1px solid var(--bd2);color:var(--tx3);border-radius:var(--r);
+  cursor:pointer;background:var(--s1);transition:all .15s;
 }
-.page-dots{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
-.page-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);cursor:pointer;transition:all .15s;border:none}
-.page-dot.active{background:var(--lime)}
+#refresh-btn:hover{color:var(--tx);border-color:var(--tx3);background:var(--s2)}
+#refresh-btn.dirty{color:var(--ac)!important;border-color:var(--ac)!important;animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.42}}
 
-/* ── REFRESH BUTTON DIRTY STATE ── */
-#refresh-btn.dirty{color:var(--lime)!important;border-color:var(--lime)!important;animation:refresh-pulse 1.4s ease-in-out infinite}
-@keyframes refresh-pulse{0%,100%{opacity:1}50%{opacity:.55}}
-#refresh-btn:hover{color:var(--text)!important;background:var(--surface3)!important;animation:none!important}
-
-/* ── LOADING / OVERLAY ── */
-#loading-overlay{
-  position:absolute;inset:0;background:rgba(10,10,10,.75);
-  display:none;align-items:center;justify-content:center;z-index:10;backdrop-filter:blur(2px);
-}
+/* ─── Loading ─────────────────────────────────────────────────── */
+#loading-overlay{position:absolute;inset:0;background:rgba(9,10,16,.82);display:none;align-items:center;justify-content:center;z-index:20;backdrop-filter:blur(2px);border-radius:var(--r)}
 #loading-overlay.active{display:flex}
-.spinner{
-  width:30px;height:30px;border:2px solid var(--border2);
-  border-top-color:var(--lime);border-radius:50%;animation:spin .65s linear infinite;
-}
+.spinner{width:22px;height:22px;border-radius:50%;border:2px solid var(--s4);border-top-color:var(--ac);animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── LOGO EDITOR MODAL ── */
-#logo-editor-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.9);
-  display:none;align-items:center;justify-content:center;z-index:200;
-  backdrop-filter:blur(6px);
+/* ─── Fields ──────────────────────────────────────────────────── */
+.field{margin-bottom:8px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-family:var(--fm);font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);margin-bottom:4px}
+.field input,.field textarea{
+  width:100%;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r);
+  color:var(--tx);font-family:var(--f);font-size:12px;padding:6px 9px;outline:none;
+  transition:border-color .15s,box-shadow .15s;
 }
-#logo-editor-overlay.open{display:flex}
-#logo-editor-modal{
-  background:var(--surface);border:1px solid var(--border2);
-  border-radius:var(--radius-lg);padding:20px;display:flex;flex-direction:column;
-  gap:12px;max-width:92vw;
-}
-#logo-editor-modal h3{font-family:var(--font-cond);font-weight:700;font-size:15px;color:var(--lime);letter-spacing:.04em}
-#logo-editor-modal p{font-size:11px;color:var(--text2)}
-#logo-editor-canvas{border-radius:4px;display:block}
-.modal-actions{display:flex;gap:7px}
-.modal-actions-sep{margin-left:auto}
+.field input:focus,.field textarea:focus{border-color:var(--ac2);box-shadow:0 0 0 2px var(--ac-dim)}
+.field input::placeholder,.field textarea::placeholder{color:var(--tx3)}
+.field textarea{resize:vertical;min-height:52px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 
-/* ── LIBRARY VIEW ── */
-#library-view-wrapper{display:none;height:calc(100vh - 52px);overflow:hidden}
-#library-view-wrapper.active{display:block}
-.lib-scroll{height:100%;overflow-y:auto;padding:22px}
-.lib-scroll::-webkit-scrollbar{width:5px}
-.lib-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-.lib-section{margin-bottom:26px}
-.lib-section-title{
-  font-family:var(--font-cond);font-weight:700;font-size:14px;
-  margin-bottom:11px;color:var(--text);display:flex;align-items:center;gap:8px;
-  letter-spacing:.04em;
+/* ─── Template picker ─────────────────────────────────────────── */
+.tpl-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tpl-opt{
+  background:var(--s1);border:1.5px solid var(--bd2);border-radius:var(--rl);
+  padding:9px 6px;cursor:pointer;transition:all .15s var(--ease);
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  font-family:var(--fm);font-size:9px;color:var(--tx2);letter-spacing:.06em;
 }
-.lib-count{
-  font-size:9px;background:var(--surface3);color:var(--text2);
-  padding:2px 6px;border-radius:10px;font-family:var(--font-mono);
-}
-.asset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:7px}
-.asset-card{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .15s;position:relative;
-}
-.asset-card:hover{border-color:var(--lime)}
-.asset-card img{width:100%;aspect-ratio:1;object-fit:contain;display:block;padding:5px;background:var(--surface3)}
-.asset-card .asset-name{padding:4px 6px;font-size:9px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-mono)}
-.asset-del{
-  position:absolute;top:3px;right:3px;background:rgba(0,0,0,.7);
-  border:none;border-radius:3px;color:var(--text2);cursor:pointer;
-  font-size:10px;padding:2px 4px;opacity:0;transition:opacity .15s;
-}
-.asset-card:hover .asset-del{opacity:1}
-.asset-del:hover{color:var(--danger)}
-.saved-mockup-card{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:var(--radius);padding:9px;display:flex;align-items:center;
-  gap:9px;cursor:pointer;transition:all .15s;margin-bottom:5px;
-}
-.saved-mockup-card:hover{border-color:var(--lime)}
-.mockup-icon{
-  width:38px;height:38px;background:var(--surface3);border-radius:4px;
-  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;overflow:hidden;
-}
-.mockup-icon img{width:38px;height:38px;object-fit:contain}
-.mockup-info{flex:1;min-width:0}
-.mockup-name{font-size:11px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mockup-date{font-size:9px;color:var(--text3);margin-top:2px;font-family:var(--font-mono)}
-.mockup-actions{display:flex;gap:4px;flex-shrink:0}
+.tpl-opt:hover{border-color:var(--tx3);color:var(--tx)}
+.tpl-opt.active{border-color:var(--ac);background:var(--ac-dim);color:var(--ac)}
+.tpl-icon{font-size:13px;line-height:1}
 
-/* ── LOOKBOOK VIEW ── */
-#lookbook-view-wrapper{display:none;height:calc(100vh - 52px);overflow:hidden}
-#lookbook-view-wrapper.active{display:block}
-#lookbook-view{display:grid;grid-template-columns:1fr 360px;height:100%;overflow:hidden}
-.lb-left{padding:22px;overflow-y:auto}
-.lb-left::-webkit-scrollbar{width:5px}
-.lb-left::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-.lb-right{
-  background:var(--surface);border-left:1px solid var(--border);
-  padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:13px;
+/* ─── Swatches ────────────────────────────────────────────────── */
+.swatch-grid{display:flex;flex-direction:column;gap:5px;margin-bottom:5px}
+.swatch-item{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:6px 8px;display:flex;flex-direction:column;gap:4px}
+.swatch-row{display:flex;align-items:center;gap:5px}
+.swatch-hex{font-family:var(--fm);font-size:9px;color:var(--tx2);flex:1;min-width:0}
+.swatch-name-in{background:transparent;border:none;border-bottom:1px solid var(--bd2);color:var(--tx2);font-family:var(--fm);font-size:9px;padding:2px 0;outline:none;width:100%;transition:border-color .15s}
+.swatch-name-in:focus{border-color:var(--ac2)}
+.swatch-name-in::placeholder{color:var(--tx3)}
+.add-swatch{background:var(--s1);border:1px dashed var(--bd2);border-radius:var(--r);color:var(--tx3);font-size:12px;padding:5px;width:100%;cursor:pointer;transition:all .15s}
+.add-swatch:hover{border-color:var(--ac);color:var(--ac);background:var(--ac-dim)}
+
+/* ─── Lookbook ────────────────────────────────────────────────── */
+#lookbook-view-wrapper{display:none;height:calc(100vh - var(--hh));overflow:hidden}
+#lookbook-view-wrapper.active{display:flex}
+#lookbook-view{display:grid;grid-template-columns:1fr 330px;height:100%;width:100%;overflow:hidden}
+.lb-left{padding:20px 22px;overflow-y:auto;background:var(--bg)}
+.lb-right{border-left:1px solid var(--bd);background:var(--s0);padding:18px;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.lb-hdr{margin-bottom:18px}
+.lb-hdr h2{font-family:var(--fb);font-size:21px;letter-spacing:.07em;color:var(--tx)}
+.lb-hdr p{font-size:11px;color:var(--tx2);margin-top:3px}
+.lb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px}
+.lb-card{
+  background:var(--s0);border:1.5px solid var(--bd);border-radius:var(--rl);
+  cursor:pointer;overflow:hidden;transition:all .18s var(--ease);position:relative;
 }
-.lb-right::-webkit-scrollbar{width:4px}
-.lb-right::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-.lb-page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-.lb-page-header h2{font-family:var(--font-cond);font-weight:700;font-size:18px;letter-spacing:.04em}
-
-/* Lookbook mode tabs */
-.lb-mode-tabs{display:flex;gap:4px;margin-bottom:18px;background:var(--surface2);padding:4px;border-radius:var(--radius-lg)}
-.lb-mode-tab{
-  flex:1;text-align:center;padding:7px 4px;border-radius:var(--radius);cursor:pointer;
-  font-family:var(--font-mono);font-size:10px;border:none;background:none;color:var(--text2);
-  transition:all .15s;letter-spacing:.03em;
-}
-.lb-mode-tab.active{background:var(--surface);color:var(--lime);border:1px solid var(--border2)}
-
-/* Mockup selection cards */
-.lb-mockup-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:9px;margin-bottom:18px}
-.lb-mockup-card{
-  background:var(--surface2);border:2px solid var(--border);
-  border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;
-  transition:all .15s;position:relative;user-select:none;
-}
-.lb-mockup-card:hover{border-color:var(--text2)}
-.lb-mockup-card.selected{border-color:var(--lime);background:var(--lime-dim)}
-.lb-check{
-  position:absolute;top:5px;right:5px;width:18px;height:18px;
-  border-radius:50%;background:var(--surface3);border:2px solid var(--border2);
-  display:flex;align-items:center;justify-content:center;font-size:10px;transition:all .15s;
-}
-.lb-mockup-card.selected .lb-check{background:var(--lime);border-color:var(--lime);color:#1a1a00}
-.lb-thumb-row{display:flex;gap:2px;background:var(--surface3);padding:7px}
-.lb-thumb-img{flex:1;aspect-ratio:1;object-fit:contain;display:block}
-.lb-thumb-placeholder{flex:1;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text3)}
-.lb-label{padding:5px 7px;font-size:9px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-family:var(--font-mono)}
-.lb-sublabel{padding:0 7px 5px;font-size:8px;color:var(--text3);font-family:var(--font-mono)}
-
-/* Queue items */
-.lb-queue{display:flex;flex-direction:column;gap:5px;min-height:54px}
-.lb-queue-item{
-  background:var(--surface2);border:1px solid var(--border);border-radius:5px;
-  padding:7px 9px;display:flex;align-items:center;gap:7px;cursor:grab;transition:all .15s;
-}
-.lb-queue-item:active{cursor:grabbing}
-.lb-queue-item.drag-over{border-color:var(--lime)}
-.drag-handle{color:var(--text3);font-size:13px;flex-shrink:0;cursor:grab}
-.lb-q-thumb{width:32px;height:32px;object-fit:contain;border-radius:3px;background:var(--surface3);flex-shrink:0}
-.lb-q-info{flex:1;min-width:0}
-.lb-q-name{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lb-q-sub{font-size:9px;color:var(--text3);margin-top:1px;font-family:var(--font-mono)}
-.lb-q-remove{color:var(--text3);background:none;border:none;cursor:pointer;font-size:12px;padding:2px;flex-shrink:0}
-.lb-q-remove:hover{color:var(--danger)}
-.lb-empty{border:1px dashed var(--border2);border-radius:5px;padding:18px;text-align:center;font-size:10px;color:var(--text3)}
-
-/* ── PICKER MODAL ── */
-#library-picker-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(4px)}
-#library-picker-overlay.open{display:flex}
-.picker-modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:18px;max-width:480px;width:90vw;max-height:68vh;display:flex;flex-direction:column;gap:11px}
-.picker-modal h3{font-family:var(--font-cond);font-weight:700;font-size:14px;letter-spacing:.04em}
-
-/* ── TOAST ── */
-#toast-container{position:fixed;top:60px;right:14px;z-index:9999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
-.toast{
-  background:var(--surface3);border:1px solid var(--border2);border-radius:var(--radius);
-  padding:9px 13px;font-size:11px;color:var(--text);animation:slideInRight .18s ease;
-  max-width:280px;font-family:var(--font-mono);
-}
-.toast.success{border-color:var(--success);color:var(--success)}
-.toast.error{border-color:var(--danger);color:var(--danger)}
-.toast.warning{border-color:var(--warning);color:var(--warning)}
-@keyframes slideInRight{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
-
-/* ── MISC ── */
-.empty-state{text-align:center;color:var(--text3);padding:22px 10px;font-size:11px;line-height:1.6}
-.sec-note{font-size:9px;color:var(--text3);margin-top:-5px;margin-bottom:9px;line-height:1.5}
-.divider{border:none;border-top:1px solid var(--border);margin:7px 0}
-.kbd{font-size:8px;background:var(--surface3);border:1px solid var(--border2);border-radius:3px;padding:1px 4px;color:var(--text3)}
-.green-accent{color:var(--lime)}
-.tag{background:var(--surface3);border:1px solid var(--border2);border-radius:3px;padding:2px 6px;font-size:9px;color:var(--text2);font-family:var(--font-mono)}
-
-/* ── AD-STYLE LOOKBOOK SETTINGS ── */
-.ad-bg-selector{display:flex;gap:5px;margin-top:5px}
-.bg-opt{
-  width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;
+.lb-card:hover{border-color:var(--tx3);transform:translateY(-1px);box-shadow:0 4px 18px rgba(0,0,0,.4)}
+.lb-card.selected{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac-glow),0 4px 18px rgba(0,0,0,.3)}
+.lb-check-dot{
+  position:absolute;top:6px;right:6px;width:16px;height:16px;border-radius:50%;
+  background:var(--s3);border:1.5px solid var(--bd2);
+  display:flex;align-items:center;justify-content:center;font-size:8px;color:transparent;
   transition:all .15s;
 }
-.bg-opt.active{border-color:var(--lime);transform:scale(1.1)}
-.bg-opt.bg-white{background:#ffffff}
-.bg-opt.bg-black{background:#0f0f0f}
-.bg-opt.bg-green{background:var(--green)}
-.bg-opt.bg-custom{background:linear-gradient(135deg,#ff9a9e,#a18cd1)}
+.lb-card.selected .lb-check-dot{background:var(--ac);border-color:var(--ac);color:#0c1a03}
+.lb-thumbs{display:flex;gap:2px;background:var(--s2);padding:6px}
+.lb-thumb-img{flex:1;aspect-ratio:1;object-fit:contain}
+.lb-thumb-ph{flex:1;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--tx3);font-family:var(--fm)}
+.lb-name{padding:6px 8px 2px;font-size:9.5px;font-weight:500;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-date{padding:0 8px 6px;font-size:8px;color:var(--tx3);font-family:var(--fm)}
+.lb-rlbl{font-family:var(--fm);font-size:9px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.lb-count{color:var(--ac);font-size:11px;font-weight:600}
+.lb-queue{display:flex;flex-direction:column;gap:4px}
+.lb-queue-item{display:flex;align-items:center;gap:8px;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:7px 8px;cursor:grab;transition:border-color .15s}
+.lb-queue-item.drag-over{border-color:var(--ac);background:var(--ac-dim)}
+.drag-handle{color:var(--tx3);font-size:14px;cursor:grab;user-select:none;flex-shrink:0}
+.lb-q-thumb{width:30px;height:30px;object-fit:contain;border-radius:3px;background:var(--s2);flex-shrink:0}
+.lb-q-info{flex:1;min-width:0}
+.lb-q-name{font-size:10px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lb-q-sub{font-size:8.5px;color:var(--tx3);margin-top:1px;font-family:var(--fm)}
+.lb-q-rm{background:none;border:none;cursor:pointer;color:var(--tx3);font-size:12px;padding:2px 4px;border-radius:3px;flex-shrink:0;transition:all .15s}
+.lb-q-rm:hover{color:var(--red);background:var(--red-dim)}
+.lb-empty{border:1px dashed var(--bd2);border-radius:var(--rl);padding:20px;text-align:center;font-size:11px;color:var(--tx3);line-height:1.6}
 
-/* Responsive tweak */
-@media(max-width:1100px){
-  #studio-view{grid-template-columns:240px 1fr 264px}
+/* ─── Library ─────────────────────────────────────────────────── */
+#library-view-wrapper{display:none;height:calc(100vh - var(--hh));overflow:hidden}
+#library-view-wrapper.active{display:block}
+.lib-scroll{height:100%;overflow-y:auto;padding:22px 26px;max-width:1100px;margin:0 auto}
+.lib-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.lib-hdr h2{font-family:var(--fb);font-size:20px;letter-spacing:.07em}
+.lib-section{margin-bottom:28px}
+.lib-sec-hdr{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.lib-sec-title{font-size:13px;font-weight:600;color:var(--tx2)}
+.lib-count{font-family:var(--fm);font-size:9px;background:var(--s2);border:1px solid var(--bd2);color:var(--tx3);padding:2px 6px;border-radius:3px}
+.asset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px}
+.asset-card{background:var(--s0);border:1px solid var(--bd);border-radius:var(--rl);overflow:hidden;cursor:pointer;transition:all .15s var(--ease);position:relative;display:flex;flex-direction:column}
+.asset-card:hover{border-color:var(--tx3);transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.asset-card img{width:100%;aspect-ratio:1;object-fit:contain;background:var(--s2);padding:6px}
+.asset-name{padding:5px 7px;font-size:8.5px;font-family:var(--fm);color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-top:1px solid var(--bd)}
+.asset-del{position:absolute;top:4px;right:4px;background:rgba(9,10,16,.85);border:none;color:var(--tx3);cursor:pointer;border-radius:3px;padding:2px 5px;font-size:10px;opacity:0;transition:all .15s}
+.asset-card:hover .asset-del{opacity:1}
+.asset-del:hover{color:var(--red);background:var(--red-dim)}
+.saved-mockup-card{display:flex;align-items:center;gap:10px;background:var(--s0);border:1px solid var(--bd);border-radius:var(--rl);padding:10px 12px;margin-bottom:6px;transition:border-color .15s}
+.saved-mockup-card:hover{border-color:var(--bd2)}
+.mockup-icon{width:40px;height:40px;border-radius:var(--r);background:var(--s2);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px}
+.mockup-icon img{width:100%;height:100%;object-fit:contain}
+.mockup-info{flex:1;min-width:0}
+.mockup-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mockup-date{font-size:9px;font-family:var(--fm);color:var(--tx3);margin-top:2px}
+.mockup-actions{display:flex;gap:4px;flex-shrink:0}
+
+/* ─── Modals ──────────────────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(5,6,12,.92);display:none;align-items:center;justify-content:center;z-index:400;backdrop-filter:blur(10px)}
+.modal-bg.open,.modal-bg[style*="flex"]{display:flex}
+.modal-box{
+  background:var(--s0);border:1px solid var(--bd2);border-radius:var(--rxl);
+  padding:22px;max-width:500px;width:92vw;display:flex;flex-direction:column;gap:14px;
+  animation:mIn .2s var(--ease);box-shadow:0 24px 80px rgba(0,0,0,.8);
 }
+@keyframes mIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.modal-title{font-size:15px;font-weight:600;color:var(--tx)}
+.modal-sub{font-family:var(--fm);font-size:9.5px;color:var(--tx3);letter-spacing:.04em;margin-top:3px}
+.modal-footer{display:flex;gap:8px}
+.modal-sep{border:none;border-top:1px solid var(--bd);margin:2px 0}
+
+/* ─── S&S modal specifics ─────────────────────────────────────── */
+.ss-tabs{display:flex;background:var(--s1);border:1px solid var(--bd);border-radius:var(--rl);padding:3px;gap:2px}
+.ss-tab{flex:1;padding:6px 8px;border:none;border-radius:7px;background:none;font-family:var(--fm);font-size:10px;color:var(--tx3);cursor:pointer;transition:all .15s;letter-spacing:.04em;text-transform:uppercase;font-weight:500}
+.ss-tab.active{background:var(--s4);color:var(--ac)}
+.ss-pane{display:none;flex-direction:column;gap:10px}
+.ss-pane.active{display:flex}
+.ss-in{width:100%;background:var(--s1);border:1px solid var(--bd2);border-radius:var(--r);color:var(--tx);font-family:var(--f);font-size:12px;padding:6px 9px;outline:none;transition:border-color .15s}
+.ss-in:focus{border-color:var(--ac2)}
+.ss-in::placeholder{color:var(--tx3)}
+.ss-url-row{display:flex;gap:6px;align-items:center}
+.ss-url-lbl{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);width:36px;flex-shrink:0}
+.ss-prevs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:2px}
+.ss-prev{aspect-ratio:1;background:var(--s1);border-radius:var(--r);border:1px solid var(--bd2);overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:border-color .15s;position:relative}
+.ss-prev:hover{border-color:var(--ac)}
+.ss-prev img{width:100%;height:100%;object-fit:contain}
+.ss-prev-lbl{font-size:9px;color:var(--tx3);font-family:var(--fm);position:absolute;bottom:4px;left:0;right:0;text-align:center;letter-spacing:.06em;text-transform:uppercase}
+.ss-prev.loaded .ss-prev-lbl{color:var(--ac)}
+/* GitHub catalog */
+.gh-box{background:var(--s1);border:1px solid var(--bd);border-radius:var(--rl);padding:12px;display:flex;flex-direction:column;gap:9px}
+.gh-info{font-size:11px;color:var(--tx2);line-height:1.55}
+.gh-info code{font-family:var(--fm);font-size:10px;background:var(--s3);padding:1px 5px;border-radius:3px;color:var(--ac)}
+.gh-url-row{display:flex;gap:6px}
+.gh-status{font-family:var(--fm);font-size:10px;color:var(--tx3);min-height:16px}
+.gh-status.ok{color:var(--green)}
+.gh-status.err{color:var(--red)}
+.gh-search-row{display:flex;flex-direction:column;gap:6px}
+.gh-results{max-height:188px;overflow-y:auto;display:flex;flex-direction:column;gap:3px}
+.gh-item{display:flex;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:8px 10px;cursor:pointer;transition:all .15s;animation:fadeIn .1s ease both}
+.gh-item:hover{border-color:var(--ac);background:var(--ac-dim)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.gh-item-name{font-size:11px;font-weight:500}
+.gh-item-meta{font-family:var(--fm);font-size:9px;color:var(--tx3);margin-top:1px}
+.gh-empty{text-align:center;color:var(--tx3);font-size:11px;padding:18px;font-family:var(--fm)}
+.ss-note{font-size:10px;color:var(--tx3);line-height:1.55;background:var(--s1);border-radius:var(--r);padding:9px 11px;border:1px solid var(--bd)}
+.ss-note strong{color:var(--tx2)}
+.ss-link{color:var(--ac);font-family:var(--fm);font-size:10px;text-decoration:none;border-bottom:1px solid rgba(157,218,76,.3)}
+.ss-link:hover{border-color:var(--ac)}
+
+/* ─── Logo editor ─────────────────────────────────────────────── */
+#logo-editor-overlay{position:fixed;inset:0;background:rgba(5,6,12,.92);display:none;align-items:center;justify-content:center;z-index:500;backdrop-filter:blur(10px)}
+#logo-editor-overlay.open{display:flex}
+#logo-editor-modal{background:var(--s0);border:1px solid var(--bd2);border-radius:var(--rxl);padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 24px 80px rgba(0,0,0,.8);animation:mIn .2s var(--ease)}
+#logo-editor-modal h3{font-size:14px;font-weight:600;color:var(--tx)}
+#logo-editor-modal p{font-size:11px;color:var(--tx2);line-height:1.5}
+#logo-editor-canvas{border-radius:var(--r);display:block}
+.modal-actions{display:flex;gap:6px;align-items:center}
+.modal-actions-sep{flex:1}
+
+/* ─── Library picker ──────────────────────────────────────────── */
+#library-picker-overlay{position:fixed;inset:0;background:rgba(5,6,12,.92);display:none;align-items:center;justify-content:center;z-index:300;backdrop-filter:blur(8px)}
+#library-picker-overlay.open{display:flex}
+.picker-modal{background:var(--s0);border:1px solid var(--bd2);border-radius:var(--rxl);padding:18px;width:min(520px,92vw);box-shadow:0 24px 80px rgba(0,0,0,.8);animation:mIn .2s var(--ease);display:flex;flex-direction:column;gap:12px}
+.picker-modal h3{font-size:14px;font-weight:600;color:var(--tx)}
+
+/* ─── Toasts ──────────────────────────────────────────────────── */
+#toast-container{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:6px;z-index:600;pointer-events:none}
+.toast{background:var(--s0);border:1px solid var(--bd2);border-radius:var(--r);padding:9px 14px;font-size:12px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.6);animation:toastIn .2s var(--ease);pointer-events:auto;max-width:280px;line-height:1.4;color:var(--tx2);transition:opacity .3s}
+.toast.success{border-color:var(--green);color:var(--green)}
+.toast.error{border-color:var(--red);color:var(--red)}
+.toast.warning{border-color:var(--amber);color:var(--amber)}
+@keyframes toastIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+
+/* ─── Misc ────────────────────────────────────────────────────── */
+.empty-state{text-align:center;color:var(--tx3);padding:24px 12px;font-size:11px;line-height:1.7;font-family:var(--fm)}
+.divider{border:none;border-top:1px solid var(--bd);margin:4px 0}
+.sec-note{font-size:10px;color:var(--tx3);line-height:1.5;margin-bottom:8px}
+.kbd{font-family:var(--fm);font-size:8px;background:var(--s2);border:1px solid var(--bd2);border-radius:3px;padding:1px 5px;color:var(--tx3)}
+
+@media(max-width:1100px){:root{--pl:242px;--pr:264px}}
 </style>
 </head>
 <body>
 <div id="app">
-<!-- ══ HEADER ══ -->
 <header id="header">
-  <div class="logo-mark">
-    <span class="lm-jp">JP</span>
-    <div class="lm-sep"></div>
-    <span class="lm-text">MOCKUP STUDIO</span>
+  <div class="brand">
+    <div class="brand-pip"></div>
+    <span class="brand-name">JPSTUDIO</span>
   </div>
-  <div class="header-tabs">
-    <button class="htab active" onclick="switchTab('studio',this)">Studio</button>
-    <button class="htab" onclick="switchTab('lookbook',this)">Lookbook</button>
-    <button class="htab" onclick="switchTab('library',this)">Library</button>
-  </div>
-  <div class="header-right">
-    <button class="ss-search-btn" onclick="openSsModal()" title="Search S&S Activewear">
-      <span class="ss-icon">🔍</span>
-      S&amp;S Finder
-    </button>
-    <button class="btn btn-ghost btn-sm" onclick="togglePrintPreview()" title="Toggle preview borders">Preview</button>
-    <button class="btn btn-secondary btn-sm" onclick="exportPdf()">↓ Export PDF</button>
+  <div class="hdr-div"></div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('studio',this)">Studio</button>
+    <button class="nav-tab" onclick="switchTab('lookbook',this)">Lookbook</button>
+    <button class="nav-tab" onclick="switchTab('library',this)">Library</button>
+  </nav>
+  <div class="hdr-right">
+    <button class="btn btn-secondary btn-sm" onclick="openSsModal()">⬡ S&amp;S Finder</button>
+    <button class="btn btn-ghost btn-sm" onclick="togglePrintPreview()">Preview</button>
+    <button class="btn btn-ac btn-sm" onclick="exportPdf()">↓ Export PDF</button>
   </div>
 </header>
 
 <div id="views">
-<!-- ══════════════════════════════════════════
-     STUDIO VIEW
-══════════════════════════════════════════ -->
+
+<!-- STUDIO -->
 <div id="studio-view">
-  <!-- ── LEFT PANEL ── -->
+
+  <!-- Left Panel -->
   <div class="panel panel-left">
     <div class="panel-scroll">
-
-      <!-- Garment Images -->
       <div class="psec">
-        <div class="psec-title"><span class="dot"></span>Garment Images</div>
-        <div class="upload-pair">
-          <div>
-            <div class="upload-zone" id="zone-frontBlank">
-              <input type="file" accept="image/png,image/jpeg" onchange="handleImageUpload(event,'frontBlank')"/>
-              <div id="thumb-frontBlank" style="display:none"><img class="uz-thumb" id="img-frontBlank"/></div>
-              <div id="text-frontBlank" class="uz-title" style="font-size:11px">+ Front</div>
-              <div class="uz-label">Blank</div>
-            </div>
+        <div class="psec-hdr"><span class="psec-lbl">Garment Images</span></div>
+        <div class="upload-row">
+          <div class="upload-zone" id="zone-frontBlank">
+            <input type="file" accept="image/png,image/jpeg" onchange="handleImageUpload(event,'frontBlank')"/>
+            <div id="thumb-frontBlank" style="display:none" class="uz-wrap"><img class="uz-thumb" id="img-frontBlank"/></div>
+            <div id="text-frontBlank"><div class="uz-ico">＋</div><div class="uz-title">Front</div><div class="uz-sub">Blank</div></div>
           </div>
-          <div>
-            <div class="upload-zone" id="zone-backBlank">
-              <input type="file" accept="image/png,image/jpeg" onchange="handleImageUpload(event,'backBlank')"/>
-              <div id="thumb-backBlank" style="display:none"><img class="uz-thumb" id="img-backBlank"/></div>
-              <div id="text-backBlank" class="uz-title" style="font-size:11px">+ Back</div>
-              <div class="uz-label">Blank</div>
-            </div>
+          <div class="upload-zone" id="zone-backBlank">
+            <input type="file" accept="image/png,image/jpeg" onchange="handleImageUpload(event,'backBlank')"/>
+            <div id="thumb-backBlank" style="display:none" class="uz-wrap"><img class="uz-thumb" id="img-backBlank"/></div>
+            <div id="text-backBlank"><div class="uz-ico">＋</div><div class="uz-title">Back</div><div class="uz-sub">Blank</div></div>
           </div>
         </div>
-        <div class="img-action-row">
-          <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('frontBlank')">📁 F</button>
-          <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('backBlank')">📁 B</button>
-          <button class="btn btn-danger" onclick="clearImage('frontBlank')">✕ F</button>
-          <button class="btn btn-danger" onclick="clearImage('backBlank')">✕ B</button>
+        <div class="img-actions">
+          <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('frontBlank')">↑ F</button>
+          <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('backBlank')">↑ B</button>
+          <button class="btn btn-danger btn-xs" onclick="clearImage('frontBlank')">✕ F</button>
+          <button class="btn btn-danger btn-xs" onclick="clearImage('backBlank')">✕ B</button>
         </div>
       </div>
 
-      <!-- Logo Upload -->
       <div class="psec">
-        <div class="psec-title"><span class="dot"></span>Logo / Artwork</div>
-        <div class="upload-pair">
-          <div>
-            <div class="upload-zone" id="zone-frontLogo">
-              <input type="file" accept="image/png,image/jpeg" onchange="handleImageUpload(event,'frontLogo')"/>
-              <div id="thumb-frontLogo" style="display:none"><img class="uz-thumb" id="img-frontLogo"/></div>
-              <div id="text-frontLogo" class="uz-title" style="font-size:11px">+ Front</div>
-              <div class="uz-label">Logo</div>
-            </div>
+        <div class="psec-hdr"><span class="psec-lbl">Logo / Artwork</span></div>
+        <div class="upload-row">
+          <div class="upload-zone" id="zone-frontLogo">
+            <input type="file" accept="image/png,image/jpeg" onchange="handleImageUpload(event,'frontLogo')"/>
+            <div id="thumb-frontLogo" style="display:none" class="uz-wrap"><img class="uz-thumb" id="img-frontLogo"/></div>
+            <div id="text-frontLogo"><div class="uz-ico">＋</div><div class="uz-title">Front</div><div class="uz-sub">Logo</div></div>
           </div>
-          <div>
-            <div class="upload-zone" id="zone-backLogo">
-              <input type="file" accept="image/png,image/jpeg" onchange="handleImageUpload(event,'backLogo')"/>
-              <div id="thumb-backLogo" style="display:none"><img class="uz-thumb" id="img-backLogo"/></div>
-              <div id="text-backLogo" class="uz-title" style="font-size:11px">+ Back</div>
-              <div class="uz-label">Logo</div>
-            </div>
+          <div class="upload-zone" id="zone-backLogo">
+            <input type="file" accept="image/png,image/jpeg" onchange="handleImageUpload(event,'backLogo')"/>
+            <div id="thumb-backLogo" style="display:none" class="uz-wrap"><img class="uz-thumb" id="img-backLogo"/></div>
+            <div id="text-backLogo"><div class="uz-ico">＋</div><div class="uz-title">Back</div><div class="uz-sub">Logo</div></div>
           </div>
         </div>
-        <div class="img-action-row">
-          <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('frontLogo')">📁 F</button>
-          <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('backLogo')">📁 B</button>
-          <button class="btn btn-danger" onclick="clearImage('frontLogo')">✕ F</button>
-          <button class="btn btn-danger" onclick="clearImage('backLogo')">✕ B</button>
+        <div class="img-actions">
+          <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('frontLogo')">↑ F</button>
+          <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('backLogo')">↑ B</button>
+          <button class="btn btn-danger btn-xs" onclick="clearImage('frontLogo')">✕ F</button>
+          <button class="btn btn-danger btn-xs" onclick="clearImage('backLogo')">✕ B</button>
         </div>
-        <div class="img-action-row">
-          <button class="btn btn-secondary btn-sm" onclick="openLogoEditor('front')" style="flex:1">✏️ Position Front</button>
-          <button class="btn btn-secondary btn-sm" onclick="openLogoEditor('back')" style="flex:1">✏️ Position Back</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px">
+          <button class="btn btn-secondary btn-sm" onclick="openLogoEditor('front')">✏ Position F</button>
+          <button class="btn btn-secondary btn-sm" onclick="openLogoEditor('back')">✏ Position B</button>
         </div>
       </div>
 
-      <!-- Auto-Placement -->
       <div class="psec">
-        <div class="psec-title"><span class="dot"></span>Auto-Placement</div>
-        <div class="place-side-toggle">
-          <button class="side-pill active" id="pill-front" onclick="setPlaceSide('front')">FRONT</button>
-          <button class="side-pill" id="pill-back" onclick="setPlaceSide('back')">BACK</button>
+        <div class="psec-hdr"><span class="psec-lbl">Auto-Placement</span></div>
+        <div class="place-side">
+          <button class="side-pill active" id="pill-front" onclick="setPlaceSide('front')">Front</button>
+          <button class="side-pill" id="pill-back" onclick="setPlaceSide('back')">Back</button>
         </div>
-        <div class="placement-grid">
-          <button class="place-btn" onclick="applyPlacementPreset('lc')" title="Left Chest"><span class="place-icon">👕</span>Left Chest</button>
-          <button class="place-btn" onclick="applyPlacementPreset('cc')" title="Center Chest"><span class="place-icon">⬛</span>Ctr Chest</button>
-          <button class="place-btn" onclick="applyPlacementPreset('rc')" title="Right Chest"><span class="place-icon">👕</span>Right Chest</button>
-          <button class="place-btn" onclick="applyPlacementPreset('lp')" title="Left Pocket"><span class="place-icon">🔲</span>Pocket</button>
-          <button class="place-btn" onclick="applyPlacementPreset('fb')" title="Full Back"><span class="place-icon">⬜</span>Full Back</button>
-          <button class="place-btn" onclick="applyPlacementPreset('cb')" title="Center Back"><span class="place-icon">🟦</span>Ctr Back</button>
-          <button class="place-btn" onclick="applyPlacementPreset('sl')" title="Left Sleeve"><span class="place-icon">💪</span>Sleeve</button>
-          <button class="place-btn" onclick="applyPlacementPreset('nk')" title="Nape"><span class="place-icon">🔖</span>Nape</button>
+        <div class="place-grid">
+          <button class="place-btn" onclick="applyPlacementPreset('lc')"><div class="place-pip" style="align-self:flex-start;margin-left:2px"></div>L Chest</button>
+          <button class="place-btn" onclick="applyPlacementPreset('cc')"><div class="place-pip"></div>Ctr Chest</button>
+          <button class="place-btn" onclick="applyPlacementPreset('rc')"><div class="place-pip" style="align-self:flex-end;margin-right:2px"></div>R Chest</button>
+          <button class="place-btn" onclick="applyPlacementPreset('lp')"><div class="place-pip" style="margin-left:3px"></div>Pocket</button>
+          <button class="place-btn" onclick="applyPlacementPreset('fb')"><div class="place-pip" style="width:8px;height:8px;border-radius:2px"></div>Full Back</button>
+          <button class="place-btn" onclick="applyPlacementPreset('cb')"><div class="place-pip"></div>Ctr Back</button>
+          <button class="place-btn" onclick="applyPlacementPreset('sl')"><div class="place-pip" style="margin-left:-3px"></div>Sleeve</button>
+          <button class="place-btn" onclick="applyPlacementPreset('nk')"><div class="place-pip" style="margin-top:-4px"></div>Nape</button>
         </div>
       </div>
-
     </div>
-  </div><!-- /left panel -->
+  </div>
 
-  <!-- ── CENTER CANVAS ── -->
+  <!-- Canvas -->
   <div id="canvas-area">
     <div id="canvas-toolbar">
       <div class="page-nav">
-        <button class="btn btn-ghost btn-icon" onclick="changePage(-1)" title="Prev page">‹</button>
+        <button class="btn btn-ghost btn-icon" onclick="changePage(-1)">‹</button>
         <span class="page-badge" id="page-badge">Page 1 / 1</span>
-        <button class="btn btn-ghost btn-icon" onclick="changePage(1)" title="Next page">›</button>
+        <button class="btn btn-ghost btn-icon" onclick="changePage(1)">›</button>
         <button class="btn btn-secondary btn-sm" onclick="addPage()">+ Page</button>
-        <button class="btn btn-danger" onclick="deletePage()">Del Page</button>
+        <button class="btn btn-danger btn-sm" onclick="deletePage()">Del</button>
       </div>
       <div class="page-dots" id="page-dots"></div>
-      <button id="refresh-btn" class="btn btn-ghost btn-sm" onclick="manualRefresh()" title="Refresh preview" style="margin-left:auto;font-family:var(--font-mono);font-size:11px;display:flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--border2);color:var(--text2);border-radius:var(--radius);cursor:pointer;background:var(--surface2);transition:all .15s">
-        <span id="refresh-icon" style="font-size:13px">↻</span> Refresh
-      </button>
+      <button id="refresh-btn" onclick="manualRefresh()">↻ Refresh</button>
     </div>
     <div id="pdf-canvas-wrapper">
       <canvas id="pdf-canvas"></canvas>
@@ -587,44 +503,39 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
     </div>
   </div>
 
-  <!-- ── RIGHT PANEL ── -->
+  <!-- Right Panel -->
   <div class="panel panel-right">
     <div class="panel-scroll">
-
-      <!-- Mockup Info -->
       <div class="psec">
-        <div class="psec-title"><span class="dot"></span>Mockup Info</div>
-        <div class="field"><label>Title</label><input type="text" id="f-title" placeholder="e.g. Front + Back Print" oninput="liveUpdate()"/></div>
-        <div class="field"><label>Subtitle</label><input type="text" id="f-subtitle" placeholder="e.g. Screen Print · Spring 2025" oninput="liveUpdate()"/></div>
+        <div class="psec-hdr"><span class="psec-lbl">Mockup Info</span></div>
+        <div class="field"><label>Title</label><input type="text" id="f-title" placeholder="e.g. JP Hoodie – Army" oninput="liveUpdate()"/></div>
+        <div class="field"><label>Subtitle</label><input type="text" id="f-subtitle" placeholder="SS4500 · Screen Print" oninput="liveUpdate()"/></div>
         <div class="row2">
           <div class="field"><label>Mockup #</label><input type="text" id="f-mockupnum" placeholder="#0001" oninput="liveUpdate()"/></div>
-          <div class="field"><label>PDF Filename</label><input type="text" id="f-pdfname" placeholder="mockup.pdf"/></div>
+          <div class="field"><label>PDF Filename</label><input type="text" id="f-pdfname" placeholder="mockup-001.pdf"/></div>
         </div>
-        <div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Internal notes..." oninput="liveUpdate()"></textarea></div>
+        <div class="field"><label>Notes</label><textarea id="f-notes" placeholder="Internal notes…" oninput="liveUpdate()"></textarea></div>
       </div>
 
-      <!-- Template -->
       <div class="psec">
-        <div class="psec-title"><span class="dot"></span>PDF Template</div>
-        <div class="tpl-grid">
-          <button class="tpl-opt active" id="tpl-1" onclick="setTemplate(1)"><span class="tpl-icon">⬜⬜</span>Front + Back</button>
-          <button class="tpl-opt" id="tpl-2" onclick="setTemplate(2)"><span class="tpl-icon">⬜</span>Front Only</button>
+        <div class="psec-hdr"><span class="psec-lbl">Template</span></div>
+        <div class="tpl-row">
+          <button class="tpl-opt active" id="tpl-1" onclick="setTemplate(1)"><span class="tpl-icon">▣ ▣</span>Front + Back</button>
+          <button class="tpl-opt" id="tpl-2" onclick="setTemplate(2)"><span class="tpl-icon">▣</span>Front Only</button>
         </div>
       </div>
 
-      <!-- Print Specs: Front -->
       <div class="psec">
-        <div class="psec-title"><span class="dot"></span>Front Print Specs</div>
-        <div class="field"><label>Print Type</label><input type="text" id="f-type-front" placeholder="e.g. Screen Print" oninput="liveUpdate()"/></div>
+        <div class="psec-hdr"><span class="psec-lbl">Front Print Specs</span></div>
+        <div class="field"><label>Print Type</label><input type="text" id="f-type-front" placeholder="e.g. Screen Printing" oninput="liveUpdate()"/></div>
         <div class="row2">
-          <div class="field"><label>Dimensions</label><input type="text" id="f-dims-front" placeholder='10" × 12"' oninput="liveUpdate()"/></div>
+          <div class="field"><label>Dimensions</label><input type="text" id="f-dims-front" placeholder='4" × 4"' oninput="liveUpdate()"/></div>
           <div class="field"><label>Location</label><input type="text" id="f-loc-front" placeholder="Left Chest" oninput="liveUpdate()"/></div>
         </div>
       </div>
 
-      <!-- Print Specs: Back -->
       <div class="psec" id="section-back-print">
-        <div class="psec-title"><span class="dot"></span>Back Print Specs</div>
+        <div class="psec-hdr"><span class="psec-lbl">Back Print Specs</span></div>
         <div class="field"><label>Print Type</label><input type="text" id="f-type-back" placeholder="e.g. Embroidery" oninput="liveUpdate()"/></div>
         <div class="row2">
           <div class="field"><label>Dimensions</label><input type="text" id="f-dims-back" placeholder='12" × 14"' oninput="liveUpdate()"/></div>
@@ -632,144 +543,99 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
         </div>
       </div>
 
-      <!-- Front Colors -->
       <div class="psec">
-        <div class="psec-title"><span class="dot"></span>Front Logo Colors</div>
-        <p class="sec-note">Add color name to show labels in PDF</p>
+        <div class="psec-hdr"><span class="psec-lbl">Front Logo Colors</span></div>
+        <p class="sec-note">Add a name to show labels in PDF</p>
         <div class="swatch-grid" id="front-colors"></div>
       </div>
 
-      <!-- Back Colors -->
       <div class="psec" id="section-back-colors">
-        <div class="psec-title"><span class="dot"></span>Back Logo Colors</div>
-        <p class="sec-note">Add color name to show labels in PDF</p>
+        <div class="psec-hdr"><span class="psec-lbl">Back Logo Colors</span></div>
+        <p class="sec-note">Add a name to show labels in PDF</p>
         <div class="swatch-grid" id="back-colors"></div>
       </div>
 
-      <!-- Save -->
       <div class="psec">
-        <div class="psec-title"><span class="dot"></span>Save</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-green btn-sm" onclick="saveMockupToLibrary()" style="flex:1">💾 Save to Library</button>
-          <button class="btn btn-secondary btn-sm" onclick="resetCurrentPage()">↺ Reset Page</button>
+        <div class="psec-hdr"><span class="psec-lbl">Save</span></div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-primary" onclick="saveMockupToLibrary()" style="flex:1">↑ Save to Library</button>
+          <button class="btn btn-ghost btn-icon" onclick="resetCurrentPage()" title="Reset page">↺</button>
         </div>
-        <p style="font-size:9px;color:var(--text3);margin-top:6px;font-family:var(--font-mono)">Ctrl+S to save · ←/→ navigate pages</p>
+        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="kbd">Ctrl+S</span><span style="font-size:10px;color:var(--tx3)">save</span>
+          <span class="kbd">← →</span><span style="font-size:10px;color:var(--tx3)">pages</span>
+        </div>
       </div>
-
     </div>
-  </div><!-- /right panel -->
-</div><!-- /studio-view -->
+  </div>
+</div>
 
-<!-- ══════════════════════════════════════════
-     LOOKBOOK VIEW
-══════════════════════════════════════════ -->
+<!-- LOOKBOOK -->
 <div id="lookbook-view-wrapper">
   <div id="lookbook-view">
-    <!-- Left: mockup selection -->
     <div class="lb-left">
-      <div class="lb-page-header">
+      <div class="lb-hdr">
         <h2>Lookbook Builder</h2>
+        <p>Click mockups to select, then export as a collection PDF</p>
       </div>
-      <!-- Mode selector -->
-      <div class="lb-mode-tabs">
-        <button class="lb-mode-tab active" id="lbmode-grid" onclick="setLbMode('grid',this)">Collection Grid</button>
-        <button class="lb-mode-tab" id="lbmode-color" onclick="setLbMode('color',this)">Color Compare</button>
-        <button class="lb-mode-tab" id="lbmode-ad" onclick="setLbMode('ad',this)">Ad-Style</button>
-      </div>
-      <div id="lbmode-desc" style="font-size:11px;color:var(--text2);margin-bottom:16px;line-height:1.6;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px"></div>
-      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-bottom:9px;text-transform:uppercase;letter-spacing:.08em">Select Mockups</div>
-      <div class="lb-mockup-grid" id="lb-mockup-grid">
+      <div class="lb-grid" id="lb-mockup-grid">
         <div class="empty-state" style="grid-column:1/-1">No saved mockups yet.<br>Build and save mockups in the Studio tab first.</div>
       </div>
     </div>
-
-    <!-- Right: settings + export -->
     <div class="lb-right">
-      <div style="font-family:var(--font-cond);font-weight:700;font-size:14px;color:var(--lime);letter-spacing:.04em">Collection Settings</div>
-
-      <div class="field"><label>Client Name</label><input type="text" id="lb-client-name" placeholder="e.g. Acme Apparel Co."/></div>
-      <div class="field"><label>Collection Subtitle</label><input type="text" id="lb-subtitle" placeholder="e.g. Spring 2025 · Custom Merch"/></div>
-
+      <div>
+        <div class="lb-rlbl">Collection Details</div>
+        <div class="field" style="margin-bottom:7px"><label>Client / Name</label><input type="text" id="lb-client-name" placeholder="Acme Co. – Spring 2025"/></div>
+        <div class="field"><label>Subtitle</label><input type="text" id="lb-subtitle" placeholder="Custom Merch Collection"/></div>
+      </div>
       <div class="divider"></div>
-
-      <!-- Client Logo(s) -->
-      <div style="font-size:10px;color:var(--text2);font-weight:500;font-family:var(--font-mono)">Client Logo(s) for Cover</div>
-      <div class="upload-pair">
-        <div>
-          <div class="upload-zone" id="zone-lb-logo1" style="min-height:54px">
+      <div>
+        <div class="lb-rlbl" style="margin-bottom:8px">Client Logo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div class="upload-zone" id="zone-lb-logo1" style="min-height:52px">
             <input type="file" accept="image/png,image/jpeg" onchange="handleLbLogoUpload(event,0)"/>
-            <div id="thumb-lb-logo1" style="display:none"><img class="uz-thumb" id="img-lb-logo1"/></div>
-            <div id="text-lb-logo1" class="uz-title" style="font-size:10px">+ Primary</div>
+            <div id="thumb-lb-logo1" style="display:none" class="uz-wrap"><img class="uz-thumb" id="img-lb-logo1"/></div>
+            <div id="text-lb-logo1" style="font-size:10px;color:var(--tx3)">+ Primary</div>
           </div>
-        </div>
-        <div>
-          <div class="upload-zone" id="zone-lb-logo2" style="min-height:54px">
+          <div class="upload-zone" id="zone-lb-logo2" style="min-height:52px">
             <input type="file" accept="image/png,image/jpeg" onchange="handleLbLogoUpload(event,1)"/>
-            <div id="thumb-lb-logo2" style="display:none"><img class="uz-thumb" id="img-lb-logo2"/></div>
-            <div id="text-lb-logo2" class="uz-title" style="font-size:10px">+ Secondary</div>
+            <div id="thumb-lb-logo2" style="display:none" class="uz-wrap"><img class="uz-thumb" id="img-lb-logo2"/></div>
+            <div id="text-lb-logo2" style="font-size:10px;color:var(--tx3)">+ Secondary</div>
           </div>
         </div>
-      </div>
-      <div class="img-action-row">
-        <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('lbLogo1')">📁 P</button>
-        <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('lbLogo2')">📁 S</button>
-        <button class="btn btn-danger" onclick="clearLbLogo(0)">✕ P</button>
-        <button class="btn btn-danger" onclick="clearLbLogo(1)">✕ S</button>
-      </div>
-
-      <!-- Ad-style settings (shown when ad mode active) -->
-      <div id="ad-style-settings" style="display:none">
-        <div class="divider"></div>
-        <div style="font-size:10px;color:var(--text2);font-weight:500;font-family:var(--font-mono);margin-bottom:7px">Ad-Style Options</div>
-        <div class="field">
-          <label>Background Color</label>
-          <div class="ad-bg-selector">
-            <div class="bg-opt bg-white active" onclick="setAdBg('#ffffff',this)" title="White"></div>
-            <div class="bg-opt bg-black" onclick="setAdBg('#0f0f0f',this)" title="Black"></div>
-            <div class="bg-opt bg-green" onclick="setAdBg('#436c30',this)" title="JP Green"></div>
-            <input type="color" id="ad-bg-custom" value="#1a1a2e" oninput="setAdBgCustom(this.value)" title="Custom" style="width:28px;height:28px;border-radius:50%;border:2px solid var(--border2);cursor:pointer;padding:2px;background:none"/>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:7px">
-          <input type="checkbox" id="ad-show-tagline" checked style="accent-color:var(--lime)"/>
-          <label for="ad-show-tagline" style="font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font-mono)">Show JP tagline</label>
-        </div>
-        <div style="display:flex;align-items:center;gap:7px;margin-top:5px">
-          <input type="checkbox" id="ad-show-style" style="accent-color:var(--lime)"/>
-          <label for="ad-show-style" style="font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font-mono)">Show style code</label>
+        <div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('lbLogo1')">↑ P</button>
+          <button class="btn btn-ghost btn-xs" onclick="useFromLibrary('lbLogo2')">↑ S</button>
+          <button class="btn btn-danger btn-xs" onclick="clearLbLogo(0)">✕ P</button>
+          <button class="btn btn-danger btn-xs" onclick="clearLbLogo(1)">✕ S</button>
         </div>
       </div>
-
       <div class="divider"></div>
-
-      <div style="font-size:10px;color:var(--text2);margin-bottom:7px;font-family:var(--font-mono)">Selected: <span id="lb-selected-count" style="color:var(--lime)">0</span></div>
-      <div class="lb-queue" id="lb-queue">
-        <div class="lb-empty" id="lb-queue-empty">No items selected.<br>Click mockups on the left to add.</div>
+      <div>
+        <div class="lb-rlbl">Selected <span class="lb-count" id="lb-selected-count">0</span></div>
+        <div class="lb-queue" id="lb-queue">
+          <div class="lb-empty" id="lb-queue-empty">Click mockups to add them.<br>Drag to reorder.</div>
+        </div>
       </div>
-
       <div class="divider"></div>
-
-      <div class="field"><label>PDF Filename</label><input type="text" id="lb-filename" placeholder="client-lookbook.pdf"/></div>
-      <div style="display:flex;align-items:center;gap:7px">
-        <input type="checkbox" id="lb-show-labels" checked style="accent-color:var(--lime)"/>
-        <label for="lb-show-labels" style="font-size:10px;color:var(--text2);cursor:pointer;font-family:var(--font-mono)">Show item labels</label>
+      <div>
+        <div class="field" style="margin-bottom:8px"><label>PDF Filename</label><input type="text" id="lb-filename" placeholder="client-lookbook.pdf"/></div>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">
+          <input type="checkbox" id="lb-show-labels" checked style="accent-color:var(--ac)"/>
+          <label for="lb-show-labels" style="font-size:11px;color:var(--tx2);cursor:pointer">Show item labels in PDF</label>
+        </div>
       </div>
-
-      <div class="divider"></div>
-
-      <button class="btn btn-primary btn-full" onclick="exportLookbook()">↓ Export Lookbook PDF</button>
-      <button class="btn btn-ghost btn-sm btn-full" onclick="clearLookbookQueue()" style="text-align:center">✕ Clear Selection</button>
+      <button class="btn btn-ac btn-full" onclick="exportLookbook()">↓ Export Lookbook PDF</button>
+      <button class="btn btn-ghost btn-sm btn-full" onclick="clearLookbookQueue()" style="margin-top:4px">Clear Selection</button>
     </div>
   </div>
-</div><!-- /lookbook -->
+</div>
 
-<!-- ══════════════════════════════════════════
-     LIBRARY VIEW
-══════════════════════════════════════════ -->
+<!-- LIBRARY -->
 <div id="library-view-wrapper">
   <div class="lib-scroll">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-      <h2 style="font-family:var(--font-cond);font-weight:700;font-size:20px;letter-spacing:.04em">Asset Library</h2>
+    <div class="lib-hdr">
+      <h2>Asset Library</h2>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-secondary btn-sm" onclick="promptSaveBlank()">+ Blank</button>
         <button class="btn btn-secondary btn-sm" onclick="promptSaveLogo()">+ Logo</button>
@@ -777,83 +643,103 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
       </div>
     </div>
     <div class="lib-section">
-      <div class="lib-section-title">Blank Garments <span class="lib-count" id="blank-count">0</span></div>
+      <div class="lib-sec-hdr"><div class="lib-sec-title">Blank Garments</div><div class="lib-count" id="blank-count">0</div></div>
       <div class="asset-grid" id="library-blanks"><div class="empty-state" style="grid-column:1/-1">No blanks saved yet.</div></div>
     </div>
     <div class="lib-section">
-      <div class="lib-section-title">Logos <span class="lib-count" id="logo-count">0</span></div>
+      <div class="lib-sec-hdr"><div class="lib-sec-title">Logos</div><div class="lib-count" id="logo-count">0</div></div>
       <div class="asset-grid" id="library-logos"><div class="empty-state" style="grid-column:1/-1">No logos saved yet.</div></div>
     </div>
     <div class="lib-section">
-      <div class="lib-section-title">Saved Mockups <span class="lib-count" id="mockup-count">0</span></div>
-      <p style="font-size:10px;color:var(--text3);margin-bottom:11px;line-height:1.5;font-family:var(--font-mono)">Mockups saved here appear in the Lookbook Builder. Use <strong style="color:var(--text2)">+ Mockup Image</strong> to add finished images directly.</p>
+      <div class="lib-sec-hdr"><div class="lib-sec-title">Saved Mockups</div><div class="lib-count" id="mockup-count">0</div></div>
+      <p class="sec-note">Mockups saved here appear in the Lookbook. Use <strong>+ Mockup Image</strong> to add a finished image directly.</p>
       <div id="library-mockups"><div class="empty-state">No saved mockups yet.</div></div>
     </div>
   </div>
 </div>
 
-</div><!-- /views -->
-</div><!-- /app -->
+</div></div><!-- /views /app -->
 
-<!-- ══ S&S FINDER MODAL ══ -->
-<div id="ss-modal-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:400;backdrop-filter:blur(6px)">
-  <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:22px;max-width:500px;width:92vw;display:flex;flex-direction:column;gap:14px">
-    <div style="display:flex;align-items:center;justify-content:space-between">
+<!-- S&S MODAL -->
+<div id="ss-modal-overlay" style="position:fixed;inset:0;background:rgba(5,6,12,.92);display:none;align-items:center;justify-content:center;z-index:400;backdrop-filter:blur(10px)">
+  <div class="modal-box" style="max-width:530px">
+    <div class="modal-hdr">
       <div>
-        <div style="font-family:var(--font-cond);font-weight:700;font-size:17px;color:var(--lime);letter-spacing:.06em">S&amp;S Activewear Finder</div>
-        <div style="font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-top:2px">Import garment blanks directly from S&amp;S</div>
+        <div class="modal-title">S&amp;S Activewear Finder</div>
+        <div class="modal-sub">Load garment blanks into the studio</div>
       </div>
       <button class="btn btn-ghost btn-icon" onclick="closeSsModal()">✕</button>
     </div>
 
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;display:flex;flex-direction:column;gap:9px">
-      <div class="row2">
-        <div class="field" style="margin:0"><label>Style Code</label><input type="text" id="ss-style" placeholder="e.g. G500, PC61, 3001C" oninput="buildSsUrl()"/></div>
-        <div class="field" style="margin:0"><label>Color Name</label><input type="text" id="ss-color" placeholder="e.g. Navy, Forest Green"/></div>
+    <div class="ss-tabs">
+      <button class="ss-tab active" id="ss-tab-catalog" onclick="switchSsTab('catalog',this)">GitHub Catalog</button>
+      <button class="ss-tab" id="ss-tab-url" onclick="switchSsTab('url',this)">Paste URLs</button>
+    </div>
+
+    <!-- GitHub Catalog pane -->
+    <div class="ss-pane active" id="ss-pane-catalog">
+      <div class="gh-box">
+        <div class="gh-info">Store your S&amp;S image URLs permanently in <code>public/garments.json</code> in your JPStudio repo — search here instead of pasting every time.</div>
+        <div class="gh-url-row">
+          <input type="text" class="ss-in" id="gh-manifest-url" placeholder="https://raw.githubusercontent.com/Jointprinting/JPStudio/main/public/garments.json" style="flex:1;font-size:10.5px"/>
+          <button class="btn btn-secondary btn-sm" onclick="saveGhManifestUrl()">Save</button>
+          <button class="btn btn-primary btn-sm" onclick="fetchGhManifest()">Load</button>
+        </div>
+        <div id="gh-manifest-status" class="gh-status"></div>
       </div>
-      <div style="display:flex;gap:6px;align-items:center">
+      <div class="gh-search-row">
+        <input type="text" class="ss-in" id="gh-search" placeholder="Search style code or color — e.g. SS4500, Army…" oninput="searchGhManifest(this.value)"/>
+        <div id="gh-results" class="gh-results"><div class="gh-empty">Load your catalog above to search garments</div></div>
+      </div>
+      <div class="ss-note">
+        <strong>Adding a garment:</strong> Find it on S&amp;S → right-click front/back image → "Copy image address" → add to <code>garments.json</code>:
+        <code style="display:block;margin-top:5px;word-break:break-all">{"style":"SS4500","color":"Army","name":"ITC Hoodie Army","front":"URL","back":"URL"}</code>
+      </div>
+    </div>
+
+    <!-- Paste URLs pane -->
+    <div class="ss-pane" id="ss-pane-url">
+      <div class="row2" style="gap:8px">
+        <div class="field" style="margin:0"><label>Style Code</label><input type="text" class="ss-in" id="ss-style" placeholder="SS4500, 3001C…" oninput="buildSsUrl()"/></div>
+        <div class="field" style="margin:0"><label>Color</label><input type="text" class="ss-in" id="ss-color" placeholder="Army, Black…"/></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
         <a id="ss-product-link" href="#" target="_blank" class="ss-link" style="display:none">Open on S&amp;S ↗</a>
-        <button class="btn btn-green btn-sm" onclick="tryAutoLoadSs()">🔄 Auto-Try Load</button>
-        <span id="ss-auto-status" style="font-size:9px;color:var(--text3);font-family:var(--font-mono)"></span>
+        <span id="ss-auto-status" style="font-size:10px;font-family:var(--fm);color:var(--tx3)"></span>
+      </div>
+      <div class="ss-note">Right-click a garment image on S&amp;S → "Copy image address" → paste below, then click Test to preview</div>
+      <div class="ss-url-row">
+        <span class="ss-url-lbl">Front</span>
+        <input type="text" class="ss-in" id="ss-front-url" placeholder="https://www.ssactivewear.com/…"/>
+        <button class="btn btn-secondary btn-xs" onclick="testSsUrl('front')">Test</button>
+      </div>
+      <div class="ss-url-row">
+        <span class="ss-url-lbl">Back</span>
+        <input type="text" class="ss-in" id="ss-back-url" placeholder="https://www.ssactivewear.com/…"/>
+        <button class="btn btn-secondary btn-xs" onclick="testSsUrl('back')">Test</button>
+      </div>
+      <div class="ss-prevs">
+        <div class="ss-prev" id="ss-prev-front" onclick="testSsUrl('front')"><div class="ss-prev-lbl">Front</div></div>
+        <div class="ss-prev" id="ss-prev-back" onclick="testSsUrl('back')"><div class="ss-prev-lbl">Back</div></div>
       </div>
     </div>
 
-    <div style="font-size:10px;color:var(--text2);font-family:var(--font-mono);margin-bottom:4px">Or paste direct image URLs from S&amp;S:</div>
-    <div class="ss-url-row">
-      <span class="ss-url-label">FRONT</span>
-      <input type="text" class="ss-url-input" id="ss-front-url" placeholder="https://www.ssactivewear.com/..."/>
-      <button class="btn btn-secondary btn-xs" onclick="testSsUrl('front')">Test</button>
-    </div>
-    <div class="ss-url-row">
-      <span class="ss-url-label">BACK</span>
-      <input type="text" class="ss-url-input" id="ss-back-url" placeholder="https://www.ssactivewear.com/..."/>
-      <button class="btn btn-secondary btn-xs" onclick="testSsUrl('back')">Test</button>
-    </div>
-
-    <div class="ss-preview-row" id="ss-preview-row">
-      <div class="ss-prev-thumb" id="ss-prev-front">
-        <div class="prev-label">FRONT</div>
-      </div>
-      <div class="ss-prev-thumb" id="ss-prev-back">
-        <div class="prev-label">BACK</div>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-primary" style="flex:1" onclick="importSsImages()">↓ Import to Studio</button>
+    <hr class="modal-sep"/>
+    <div class="modal-footer">
+      <button class="btn btn-ac" style="flex:1" onclick="importSsImages()">↓ Import to Studio</button>
       <button class="btn btn-ghost" onclick="closeSsModal()">Cancel</button>
     </div>
   </div>
 </div>
 
-<!-- ══ LOGO EDITOR OVERLAY ══ -->
+<!-- LOGO EDITOR -->
 <div id="logo-editor-overlay">
   <div id="logo-editor-modal">
     <h3>Position Logo on Garment</h3>
     <p>Drag to reposition · Corner handles to resize · Use presets for quick placement</p>
     <canvas id="logo-editor-canvas"></canvas>
     <div class="modal-actions">
-      <button class="btn btn-primary" onclick="confirmLogoPosition()">✓ Apply</button>
+      <button class="btn btn-ac" onclick="confirmLogoPosition()">✓ Apply</button>
       <button class="btn btn-secondary" onclick="resetLogoPosition()">↺ Reset</button>
       <div class="modal-actions-sep"></div>
       <button class="btn btn-ghost" onclick="closeLogoEditor()">Cancel</button>
@@ -861,7 +747,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
   </div>
 </div>
 
-<!-- ══ LIBRARY PICKER MODAL ══ -->
+<!-- LIBRARY PICKER -->
 <div id="library-picker-overlay">
   <div class="picker-modal">
     <div style="display:flex;align-items:center;justify-content:space-between">
@@ -874,11 +760,94 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
 <div id="toast-container"></div>
 <script>
-// ── Constants ──────────────────────────────────────────────────────
+// ─── GitHub Catalog ───────────────────────────────────────────────
+let ghManifestData = null;
+let _ghManifestUrl = localStorage.getItem('jp_gh_manifest') || '';
+if (_ghManifestUrl) {
+  requestAnimationFrame(() => {
+    const el = document.getElementById('gh-manifest-url');
+    if (el) el.value = _ghManifestUrl;
+  });
+}
+
+function saveGhManifestUrl() {
+  const url = document.getElementById('gh-manifest-url').value.trim();
+  if (!url) return;
+  localStorage.setItem('jp_gh_manifest', url);
+  _ghManifestUrl = url;
+  fetchGhManifest();
+}
+async function fetchGhManifest() {
+  const url = document.getElementById('gh-manifest-url').value.trim() || _ghManifestUrl;
+  if (!url) { setGhStatus('Enter a raw GitHub URL first', false); return; }
+  setGhStatus('Loading…', null);
+  try {
+    const res = await fetch(url + '?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' — check the URL is a raw GitHub link');
+    const data = await res.json();
+    if (!Array.isArray(data)) throw new Error('garments.json must be an array');
+    ghManifestData = data;
+    localStorage.setItem('jp_gh_manifest', url);
+    _ghManifestUrl = url;
+    setGhStatus(`✓ ${data.length} garment${data.length !== 1 ? 's' : ''} loaded`, true);
+    searchGhManifest('');
+  } catch(e) {
+    setGhStatus('Error: ' + e.message, false);
+  }
+}
+function setGhStatus(msg, ok) {
+  const el = document.getElementById('gh-manifest-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'gh-status' + (ok === true ? ' ok' : ok === false ? ' err' : '');
+}
+function searchGhManifest(q) {
+  const container = document.getElementById('gh-results');
+  if (!ghManifestData) { container.innerHTML = '<div class="gh-empty">Load your catalog above to search garments</div>'; return; }
+  const query = q.toLowerCase().trim();
+  const results = query
+    ? ghManifestData.filter(g => ((g.style||'') + (g.color||'') + (g.name||'')).toLowerCase().includes(query))
+    : ghManifestData;
+  if (!results.length) { container.innerHTML = '<div class="gh-empty">No matches found</div>'; return; }
+  container.innerHTML = '';
+  results.slice(0, 24).forEach((g, i) => {
+    const el = document.createElement('div');
+    el.className = 'gh-item';
+    el.style.animationDelay = (i * 0.025) + 's';
+    el.innerHTML = `<div style="flex:1"><div class="gh-item-name">${g.name || ((g.style||'') + (g.color ? ' – ' + g.color : ''))}</div><div class="gh-item-meta">${g.style || ''}${g.color ? ' · ' + g.color : ''}</div></div><span style="font-size:10px;color:var(--tx3)">→</span>`;
+    el.onclick = () => loadGhGarment(g);
+    container.appendChild(el);
+  });
+}
+async function loadGhGarment(g) {
+  if (g.front) { document.getElementById('ss-front-url').value = g.front; await previewSsUrl('front', g.front); }
+  if (g.back)  { document.getElementById('ss-back-url').value  = g.back;  await previewSsUrl('back',  g.back);  }
+  if (g.style) document.getElementById('ss-style').value = g.style;
+  if (g.color) document.getElementById('ss-color').value = g.color;
+  switchSsTab('url', document.getElementById('ss-tab-url'));
+  toast(`${g.name || g.style} loaded — click Import`, 'success');
+}
+function switchSsTab(tab, btn) {
+  document.querySelectorAll('.ss-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.ss-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('ss-pane-' + tab).classList.add('active');
+}
+// Init: load catalog if URL is saved
+window.addEventListener('load', () => {
+  if (_ghManifestUrl && !ghManifestData) {
+    const el = document.getElementById('gh-manifest-url');
+    if (el) el.value = _ghManifestUrl;
+    fetchGhManifest().catch(() => {});
+  }
+});
+</script>
+
+<script>
+// ─── Constants & Core JS ─────────────────────────────────────────
 const PAGE_WIDTH  = 720;
 const PAGE_HEIGHT = 1080;
 
-// Embedded static assets (base64)
 const JP_LOGO_B64  = 'data:image/png;base64,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';
 
 const JP_GLOBE_B64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAABIElEQVR4nOWVT0tCURDFf0GKm9xU+7Jl2sqoz6B+qlCzvkKu7Ovkxtpmq/64SQhCBcsYOA+Gx1Xfg9dGDwxczsydw733vTOwTTgDnoBHoJJFwwZQ1boIvAELxas4wzlQT9N4B7gFfoGauLZrHkVTuZpqO9q7Fk01GAN5YBd4Dwh8KJcDPsVdrWt+Avyo+E5c2XE+jDtVTddxJTYW9+74M+BAfD9wPVE8qOZQeyK+FxJ4iW3eFz9aIWAPjWo9PwwJTGJF9gUZpisELIdqPW+9MhGYLBH4DgkMM7yi55BA778feTNwDMx1TPv901qF7T0iodl9AYUEZpdPY3bIcm9idt1KYNfXSe3aD5wLrYsaMn7g7Cl3mXbgLEMFGCjsXbYEf8DuqQQakfEMAAAAAElFTkSuQmCC';
@@ -960,6 +929,7 @@ function toast(msg, type='') {
   el.className = 'toast'+(type?' '+type:'');
   el.textContent = msg;
   document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';}, 2800);
   setTimeout(()=>el.remove(), 3200);
 }
 
@@ -968,7 +938,7 @@ function setLoading(on){ document.getElementById('loading-overlay').classList.to
 
 // ── Tab Navigation ─────────────────────────────────────────────────
 function switchTab(tab, btn) {
-  document.querySelectorAll('.htab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('studio-view').classList.toggle('hidden', tab!=='studio');
   const lb = document.getElementById('lookbook-view-wrapper');
@@ -1178,16 +1148,12 @@ function buildSsUrl() {
   const style = document.getElementById('ss-style').value.trim();
   const link = document.getElementById('ss-product-link');
   if (style) {
-    link.href = `https://www.ssactivewear.com/s?keywords=${encodeURIComponent(style)}`;
+    link.href = `https://www.ssactivewear.com/ps/?q=${encodeURIComponent(style)}`;
     link.style.display = 'inline-block';
   } else {
     link.style.display = 'none';
   }
 }
-async function tryAutoLoadSs() {
-  const style = document.getElementById('ss-style').value.trim().toUpperCase();
-  const color = document.getElementById('ss-color').value.trim().replace(/\s+/g,'-');
-  if (!style) { toast('Enter a style code first', 'error'); return; }
   const status = document.getElementById('ss-auto-status');
   status.textContent = 'Trying...';
   // Try common S&S image URL patterns
@@ -1284,14 +1250,7 @@ function renderColorSwatches(side, colors) {
     const name = typeof col==='object'?col.name:'';
     const wrap = document.createElement('div');
     wrap.className = 'swatch-item';
-    wrap.innerHTML = `
-      <div style="display:flex;align-items:center;gap:4px">
-        <input type="color" value="${hex}" onchange="updateColorHex('${side}',${i},this.value)" title="${hex}"/>
-        <span class="swatch-hex">${hex}</span>
-        <button class="btn btn-danger" style="padding:1px 4px;font-size:9px" onclick="removeColor('${side}',${i})">✕</button>
-      </div>
-      <input type="text" class="swatch-name-in" placeholder="Name…" value="${name}" oninput="updateColorName('${side}',${i},this.value)"/>
-    `;
+    wrap.innerHTML = `<div class="swatch-row"><input type="color" value="${hex}" onchange="updateColorHex('${side}',${i},this.value)" title="${hex}" style="width:22px;height:22px;border:none;background:none;cursor:pointer;border-radius:3px;padding:0"/><span class="swatch-hex">${hex}</span><button class="btn btn-danger btn-xs" onclick="removeColor('${side}',${i})">✕</button></div><input type="text" class="swatch-name-in" placeholder="Color name…" value="${name}" oninput="updateColorName('${side}',${i},this.value)"/>`;
     c.appendChild(wrap);
   });
   const addBtn = document.createElement('button');
@@ -1712,7 +1671,7 @@ async function loadMockup(id,e) {
   if (!item) return;
   saveFormToState();
   state.pages[state.currentPage]=item.pageState;
-  loadPageIntoForm(); scheduleUpdate(); switchTab('studio',document.querySelector('.htab')); toast(`"${item.name}" loaded ✓`,'success');
+  loadPageIntoForm(); scheduleUpdate(); switchTab('studio',document.querySelector('.nav-tab')); toast(`"${item.name}" loaded ✓`,'success');
 }
 async function deleteAsset(store,id,e) {
   e.stopPropagation();
@@ -1803,8 +1762,7 @@ function setLbMode(mode, btn) {
     color:'Show the same garment in multiple color options side-by-side. Perfect for color selection presentations.',
     ad:'Clean, magazine-style pages — one garment per page, logo tastefully placed, no spec details. Looks like a real catalog or ad.',
   };
-  document.getElementById('lbmode-desc').textContent=descs[mode];
-  document.getElementById('ad-style-settings').style.display=mode==='ad'?'block':'none';
+  // mode descriptions removed (simplified lookbook)
 }
 function setAdBg(color,el) {
   adBgColor=color;
@@ -1822,18 +1780,18 @@ async function refreshLbGrid() {
   mockups.forEach(item=>{
     const isSelected=lbQueue.some(q=>q.mockupId===item.id);
     const card=document.createElement('div');
-    card.className='lb-mockup-card'+(isSelected?' selected':'');
+    card.className='lb-card'+(isSelected?' selected':'');
     const pg=item.pageState||{};
     const frontSrc=pg.frontCompositeBase64||pg.frontBlankBase64||null;
     const backSrc =pg.backCompositeBase64 ||pg.backBlankBase64 ||null;
     card.innerHTML=`
-      <div class="lb-check">${isSelected?'✓':''}</div>
-      <div class="lb-thumb-row">
-        ${frontSrc?`<img class="lb-thumb-img" src="${frontSrc}"/>`:'<div class="lb-thumb-placeholder">F</div>'}
-        ${backSrc?`<img class="lb-thumb-img" src="${backSrc}"/>`:'<div class="lb-thumb-placeholder">B</div>'}
+      <div class="lb-check-dot">${isSelected?'✓':''}</div>
+      <div class="lb-thumbs">
+        ${frontSrc?`<img class="lb-thumb-img" src="${frontSrc}" style="flex:1;aspect-ratio:1;object-fit:contain"/>`:'<div class="lb-thumb-ph">F</div>'}
+        ${backSrc?`<img class="lb-thumb-img" src="${backSrc}" style="flex:1;aspect-ratio:1;object-fit:contain"/>`:'<div class="lb-thumb-ph">B</div>'}
       </div>
-      <div class="lb-label">${item.name}</div>
-      <div class="lb-sublabel">${new Date(item.savedAt).toLocaleDateString()}</div>
+      <div class="lb-name">${item.name}</div>
+      <div class="lb-date">${new Date(item.savedAt).toLocaleDateString()}</div>
     `;
     card.onclick=()=>toggleLbItem(item,card);
     grid.appendChild(card);
@@ -1841,7 +1799,7 @@ async function refreshLbGrid() {
 }
 function toggleLbItem(item,card) {
   const idx=lbQueue.findIndex(q=>q.mockupId===item.id);
-  if(idx>=0){lbQueue.splice(idx,1);card.classList.remove('selected');card.querySelector('.lb-check').textContent='';}
+  if(idx>=0){lbQueue.splice(idx,1);card.classList.remove('selected');card.querySelector('.lb-check-dot').textContent='';}
   else{
     const pg=item.pageState||{};
     lbQueue.push({
@@ -1855,7 +1813,7 @@ function toggleLbItem(item,card) {
       styleCode:pg.title||item.name,
     });
     card.classList.add('selected');
-    card.querySelector('.lb-check').textContent='✓';
+    card.querySelector('.lb-check-dot').textContent='✓';
   }
   renderLbQueue();
 }
@@ -1874,7 +1832,7 @@ function renderLbQueue() {
       <span class="drag-handle">⠿</span>
       ${item.thumbnail?`<img class="lb-q-thumb" src="${item.thumbnail}"/>`:'<div class="lb-q-thumb" style="font-size:18px;display:flex;align-items:center;justify-content:center">📋</div>'}
       <div class="lb-q-info"><div class="lb-q-name">${item.name}</div><div class="lb-q-sub">${item.subtitle||''}</div></div>
-      <button class="lb-q-remove" onclick="removeLbQueueItem(${i})">✕</button>
+      <button class="lb-q-rm" onclick="removeLbQueueItem(${i})">✕</button>
     `;
     el.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',i);});
     el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over');});
@@ -1915,8 +1873,6 @@ function clearLbLogo(idx){ lbLogos[idx]=null; updateLbLogoThumb(idx,null); }
 // ── Lookbook Export ───────────────────────────────────────────────
 async function exportLookbook() {
   if(!lbQueue.length){toast('Add at least one mockup to the lookbook','error');return;}
-  if(lbMode==='ad') return exportLookbookAdStyle();
-  if(lbMode==='color') return exportLookbookColorCompare();
   return exportLookbookGrid();
 }
 
@@ -2168,11 +2124,10 @@ async function init() {
   renderColorSwatches('front',state.pages[0].frontColors);
   renderColorSwatches('back', state.pages[0].backColors);
   setTemplate(1);
-  // Init lookbook mode description
-  document.getElementById('lbmode-desc').textContent=LB_MODE_DESCS['grid'];
   await renderPdfPreview();
 }
 init();
+
 </script>
 </body>
 </html>
