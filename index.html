@@ -823,9 +823,9 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:var(--f);
 let _ssWorkerUrl = localStorage.getItem('jp_ss_worker') || '';
 let _ssLoadedFrontUrl = null;
 let _ssLoadedBackUrl  = null;
-// legacy compat — also used by importSsImages
-let ssLoadedFront = null;
-let ssLoadedBack  = null;
+// ssLoadedFront / ssLoadedBack declared in core block — used here too
+let _manualFront = null;
+let _manualBack  = null;
 
 // Populate worker URL input when modal opens
 function initWorkerSetup() {
